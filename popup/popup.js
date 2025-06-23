@@ -72,4 +72,36 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("open-dashboard").addEventListener("click", () => {
     chrome.tabs.create({ url: chrome.runtime.getURL("dashboard.html") });
   });
+
+  document.getElementById("set-initial").addEventListener("click", () => {
+    const channel = prompt("Channel name (e.g., xQc):");
+    if (!channel) return;
+
+    const category = prompt("Category (e.g., Just Chatting — optional):");
+    const timeStr = prompt("Initial watch time (in minutes or HH:MM format):");
+    if (!timeStr) return;
+
+    // Parse time input
+    let minutes = 0;
+    if (/^\d+:\d{2}$/.test(timeStr)) {
+      const [h, m] = timeStr.split(":").map(Number);
+      minutes = h * 60 + m;
+    } else {
+      minutes = parseInt(timeStr);
+    }
+
+    const seconds = minutes * 60;
+    chrome.storage.local.get("stats", (data) => {
+      const stats = data.stats || {};
+      const catKey = category || "Unknown";
+
+      stats[channel] = stats[channel] || {};
+      stats[channel][catKey] = (stats[channel][catKey] || 0) + seconds;
+
+      chrome.storage.local.set({ stats }, () => {
+        alert(`Added ${minutes} minutes to ${channel} (${catKey})`);
+        location.reload(); // Refresh the popup
+      });
+    });
+  });
 });
