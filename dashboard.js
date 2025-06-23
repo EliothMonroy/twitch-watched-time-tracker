@@ -6,7 +6,7 @@ function formatTime(seconds) {
 
 function buildChart(data) {
   const labels = data.map((d) => d.channel);
-  const times = data.map((d) => d.total / 60); // convert to minutes
+  const times = data.map((d) => d.total / 3600); // convert seconds to hours
 
   const ctx = document.getElementById("channelChart").getContext("2d");
   new Chart(ctx, {
@@ -15,7 +15,7 @@ function buildChart(data) {
       labels: labels,
       datasets: [
         {
-          label: "Time Watched (minutes)",
+          label: "Time Watched (hours)",
           data: times,
           backgroundColor: "rgba(54, 162, 235, 0.7)",
           borderColor: "rgba(54, 162, 235, 1)",
@@ -26,7 +26,7 @@ function buildChart(data) {
       scales: {
         y: {
           beginAtZero: true,
-          title: { display: true, text: "Minutes Watched", color: "inherit" },
+          title: { display: true, text: "Hours Watched", color: "inherit" },
           ticks: { color: "inherit" },
         },
         x: {
@@ -71,7 +71,7 @@ function buildCategoryChart(categoryStats) {
   const sorted = Object.entries(categoryStats).sort((a, b) => b[1] - a[1]); // descending by seconds
 
   const labels = sorted.map(([cat]) => cat);
-  const values = sorted.map(([_, sec]) => sec / 60); // convert to minutes
+  const values = sorted.map(([_, sec]) => sec / 3600);
 
   const ctx = document.getElementById("categoryChart").getContext("2d");
   new Chart(ctx, {
@@ -80,7 +80,7 @@ function buildCategoryChart(categoryStats) {
       labels: labels,
       datasets: [
         {
-          label: "Time Watched by Category (minutes)",
+          label: "Time Watched by Category (hours)",
           data: values,
           backgroundColor: "rgba(255, 159, 64, 0.7)",
           borderColor: "rgba(255, 159, 64, 1)",
@@ -100,7 +100,7 @@ function buildCategoryChart(categoryStats) {
       scales: {
         y: {
           beginAtZero: true,
-          title: { display: true, text: "Minutes Watched", color: "inherit" },
+          title: { display: true, text: "Hours Watched", color: "inherit" },
           ticks: { color: "inherit" },
         },
         x: {
