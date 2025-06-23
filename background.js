@@ -17,7 +17,10 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
   if (tab) checkTab(tab);
 });
 
-function checkTab(tab) {
-  const isTwitch = tab.url && tab.url.startsWith("https://www.twitch.tv/");
-  chrome.tabs.sendMessage(tab.id, { shouldTrack: isTwitch });
+function checkTab() {
+  chrome.tabs.query({ url: "https://www.twitch.tv/*" }, (tabs) => {
+    for (const tab of tabs) {
+      chrome.tabs.sendMessage(tab.id, { shouldTrack: true });
+    }
+  });
 }
