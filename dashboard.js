@@ -1,3 +1,5 @@
+Chart.register(ChartDataLabels);
+
 function formatTime(seconds) {
   const hours = Math.floor(seconds / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
@@ -34,6 +36,15 @@ function buildChart(data) {
         },
       },
       plugins: {
+        datalabels: {
+          anchor: "end",
+          align: "end",
+          color: "inherit",
+          font: {
+            weight: "bold",
+          },
+          formatter: (value) => `${value.toFixed(1)}h`,
+        },
         legend: { display: false },
         tooltip: {
           bodyColor: "inherit",
@@ -90,6 +101,15 @@ function buildCategoryChart(categoryStats) {
     },
     options: {
       plugins: {
+        datalabels: {
+          anchor: "end",
+          align: "end",
+          color: "inherit",
+          font: {
+            weight: "bold",
+          },
+          formatter: (value) => `${value.toFixed(1)}h`,
+        },
         legend: { display: false },
         tooltip: {
           bodyColor: "inherit",
