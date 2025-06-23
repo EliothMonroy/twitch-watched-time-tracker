@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Twitch Tracker</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 15px;
+        width: 350px;
+        background: #fff;
+        color: #000;
+        transition: background 0.3s, color 0.3s;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #121212;
+          color: #f0f0f0;
+        }
+
+        button {
+          background: #222;
+          color: #f0f0f0;
+          border: 1px solid #444;
+        }
+      }
+
+      h3 {
+        margin-top: 0;
+      }
+
+      .channel {
+        margin-bottom: 15px;
+      }
+
+      .category {
+        margin-left: 15px;
+        font-size: 13px;
+        color: inherit;
+      }
+
+      .total {
+        font-weight: bold;
+      }
+
+      button {
+        display: inline-block;
+        margin-top: 10px;
+        margin-right: 8px;
+        padding: 6px 12px;
+        font-size: 13px;
+        border: none;
+        border-radius: 4px;
+        background: #e0e0e0;
+        color: #000;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      button:hover {
+        background: #d0d0d0;
+      }
+    </style>
+  </head>
+  <body>
+    <h3>Top Channels</h3>
+    <div id="channel-list">Loading...</div>
+
+    <div style="margin-top: 10px">
+      <button id="clear">Clear Data</button>
+      <button id="export">Export JSON</button>
+      <button id="open-dashboard">Open Full Dashboard</button>
+    </div>
+    <script src="popup.js"></script>
+  </body>
+</html>

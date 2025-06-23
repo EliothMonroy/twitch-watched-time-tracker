@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Twitch Stats Dashboard</title>
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        margin: 20px;
+        background: #fff;
+        color: #000;
+        transition: background 0.3s, color 0.3s;
+      }
+
+      @media (prefers-color-scheme: dark) {
+        body {
+          background: #121212;
+          color: #f0f0f0;
+        }
+      }
+
+      canvas {
+        max-width: 100%;
+        margin-bottom: 30px;
+      }
+
+      h2 {
+        margin-top: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <h2>Twitch Time Watched Dashboard</h2>
+    <canvas id="channelChart" width="400" height="200"></canvas>
+    <canvas id="categoryChart" width="400" height="200"></canvas>
+    <script src="chart.umd.js"></script>
+    <script src="dashboard.js"></script>
+  </body>
+</html>
