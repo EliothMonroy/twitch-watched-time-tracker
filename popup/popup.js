@@ -111,3 +111,45 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+document.getElementById("importBtn").addEventListener("click", () => {
+  document.getElementById("importFileInput").click();
+});
+
+document
+  .getElementById("importFileInput")
+  .addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      // ✅ Validate expected format: streamer -> { category: seconds }
+      const isValid = Object.values(data).every(
+        (entry) =>
+          typeof entry === "object" &&
+          entry !== null &&
+          Object.values(entry).every((val) => typeof val === "number")
+      );
+
+      if (!isValid) {
+        alert("❌ Invalid file format.");
+        return;
+      }
+
+      const confirmed = confirm(
+        "Are you sure you want to overwrite your current stats with this file?"
+      );
+      if (!confirmed) return;
+
+      // ✅ Store as-is, since it's already in the correct format
+      chrome.storage.local.set({ stats: data }, () => {
+        alert("✅ Stats imported successfully!");
+        location.reload();
+      });
+    } catch (err) {
+      alert("❌ Failed to import stats: " + err.message);
+    }
+  });

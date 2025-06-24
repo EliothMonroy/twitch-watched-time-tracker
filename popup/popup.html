@@ -68,10 +68,17 @@
     <div id="channel-list">Loading...</div>
 
     <div style="margin-top: 10px">
-      <button id="clear">Clear Data</button>
-      <button id="export">Export JSON</button>
       <button id="open-dashboard">Open Full Dashboard</button>
+      <button id="export">Export JSON</button>
+      <input
+        type="file"
+        id="importFileInput"
+        accept=".json"
+        style="display: none"
+      />
+      <button id="importBtn">Import JSON</button>
       <button id="set-initial">Set Initial Watch Time</button>
+      <button id="clear">Clear Data</button>
     </div>
     <script src="popup.js"></script>
   </body>
