@@ -1,0 +1,17 @@
+# Logs
+*.log
+
+# Mac
+.DS_Store
+
+# Node
+node_modules/
+
+# VSCode
+.vscode/
+
+# Chrome Extension Artifacts
+*.zip
+
+# Output / build
+dist/
