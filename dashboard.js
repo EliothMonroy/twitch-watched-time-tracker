@@ -53,7 +53,7 @@ function buildChart(data) {
         datalabels: {
           anchor: "end",
           align: "end",
-          color: "#fff",
+          color: "#ccc",
           font: {
             weight: "bold",
           },
@@ -130,7 +130,7 @@ function buildCategoryChart(categoryStats) {
         datalabels: {
           anchor: "end",
           align: "end",
-          color: "#fff",
+          color: "#ccc",
           font: {
             weight: "bold",
           },

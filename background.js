@@ -1,26 +1,23 @@
-let activeTwitchTabId = null;
-
-chrome.tabs.onActivated.addListener(async (activeInfo) => {
-  const tab = await chrome.tabs.get(activeInfo.tabId);
-  checkTab(tab);
-});
-
-chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
-  if (changeInfo.status === "complete") {
-    checkTab(tab);
-  }
-});
-
-chrome.windows.onFocusChanged.addListener(async (windowId) => {
-  if (windowId === chrome.windows.WINDOW_ID_NONE) return;
-  const [tab] = await chrome.tabs.query({ active: true, windowId });
-  if (tab) checkTab(tab);
-});
-
-function checkTab() {
+// 1. Send track message to all twitch tabs
+function checkAllTwitchTabs() {
   chrome.tabs.query({ url: "https://www.twitch.tv/*" }, (tabs) => {
     for (const tab of tabs) {
       chrome.tabs.sendMessage(tab.id, { shouldTrack: true });
     }
   });
 }
+
+// 2. Run when a tab is activated, updated, or focused
+chrome.tabs.onActivated.addListener(() => checkAllTwitchTabs());
+chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+  if (changeInfo.status === "complete") checkAllTwitchTabs();
+});
+chrome.windows.onFocusChanged.addListener(() => checkAllTwitchTabs());
+
+// 3. 🔄 OPTIONAL: Poll every N seconds for backup coverage
+setInterval(() => {
+  checkAllTwitchTabs();
+}, 30_000); // every 30 seconds
+
+// 4. ✅ Also run immediately on extension startup
+checkAllTwitchTabs();
