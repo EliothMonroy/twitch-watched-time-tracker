@@ -28,18 +28,32 @@ function buildChart(data) {
       scales: {
         y: {
           beginAtZero: true,
-          title: { display: true, text: "Hours Watched", color: "inherit" },
-          ticks: { color: "inherit" },
+          title: {
+            display: true,
+            text: "Hours Watched",
+            color: "#fff",
+          },
+          ticks: {
+            color: "#ccc",
+          },
+          grid: {
+            color: "rgba(255, 255, 255, 0.1)",
+          },
         },
         x: {
-          ticks: { color: "inherit" },
+          ticks: {
+            color: "#ccc",
+          },
+          grid: {
+            color: "rgba(255, 255, 255, 0.05)",
+          },
         },
       },
       plugins: {
         datalabels: {
           anchor: "end",
           align: "end",
-          color: "inherit",
+          color: "#fff",
           font: {
             weight: "bold",
           },
@@ -79,7 +93,9 @@ chrome.storage.local.get("stats", (result) => {
 
 function buildCategoryChart(categoryStats) {
   // Convert to array and sort
-  const sorted = Object.entries(categoryStats).sort((a, b) => b[1] - a[1]); // descending by seconds
+  const sorted = Object.entries(categoryStats)
+    .filter(([name]) => name.toLowerCase() !== "unknown")
+    .sort((a, b) => b[1] - a[1]); // descending by seconds
 
   const labels = sorted.map(([cat]) => cat);
   const values = sorted.map(([_, sec]) => sec / 3600);
@@ -104,7 +120,7 @@ function buildCategoryChart(categoryStats) {
         datalabels: {
           anchor: "end",
           align: "end",
-          color: "inherit",
+          color: "#fff",
           font: {
             weight: "bold",
           },
@@ -120,11 +136,25 @@ function buildCategoryChart(categoryStats) {
       scales: {
         y: {
           beginAtZero: true,
-          title: { display: true, text: "Hours Watched", color: "inherit" },
-          ticks: { color: "inherit" },
+          title: {
+            display: true,
+            text: "Hours Watched",
+            color: "#fff",
+          },
+          ticks: {
+            color: "#ccc",
+          },
+          grid: {
+            color: "rgba(255, 255, 255, 0.1)",
+          },
         },
         x: {
-          ticks: { color: "inherit" },
+          ticks: {
+            color: "#ccc",
+          },
+          grid: {
+            color: "rgba(255, 255, 255, 0.05)",
+          },
         },
       },
     },
