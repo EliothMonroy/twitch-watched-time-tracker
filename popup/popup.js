@@ -47,9 +47,15 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("clear").addEventListener("click", () => {
-    chrome.storage.local.clear(() => {
-      document.getElementById("channel-list").textContent = "Data cleared.";
-    });
+    const confirmed = confirm(
+      "Are you sure you want to clear all watch data? This cannot be undone."
+    );
+    if (confirmed) {
+      chrome.storage.local.clear(() => {
+        alert("✅ All data has been cleared.");
+        location.reload(); // Optional: Refresh to reflect the reset state
+      });
+    }
   });
 
   document.getElementById("export").addEventListener("click", () => {
