@@ -55,16 +55,10 @@ setInterval(() => {
   const playing = isPlaying();
 
   if (playing) {
-    console.log(
-      `[Twitch Tracker] ${now} | Video is PLAYING | isWatching: ${isWatching}`
-    );
     updateTime();
     if (!isWatching) lastUpdate = Date.now();
     isWatching = true;
   } else {
-    console.log(
-      `[Twitch Tracker] ${now} | Video is NOT playing | isWatching: ${isWatching}`
-    );
     if (isWatching) updateTime();
     isWatching = false;
   }
