@@ -19,7 +19,7 @@ function isPlaying() {
 function updateTime() {
   const now = Date.now();
   const elapsed = Math.floor((now - lastUpdate) / 1000);
-  if (!isWatching || elapsed < 10) return;
+  if (!isWatching || elapsed < 20) return;
   console.log(`[Twitch Tracker] will save ${elapsed} seconds`);
 
   const channel = getChannelName();
@@ -62,6 +62,6 @@ setInterval(() => {
     if (isWatching) updateTime();
     isWatching = false;
   }
-}, 10000);
+}, 20000);
 
 window.addEventListener("beforeunload", updateTime);
