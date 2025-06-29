@@ -87,6 +87,7 @@ chrome.storage.local.get("stats", (result) => {
   const categoryTotals = {};
 
   for (const [channel, categories] of Object.entries(stats)) {
+    if (channel === "videos") continue; // Skip invalid channel name
     let channelTotal = 0;
     for (const [category, seconds] of Object.entries(categories)) {
       channelTotal += seconds;

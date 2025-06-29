@@ -3,6 +3,11 @@ let lastUpdate = Date.now();
 
 function getChannelName() {
   const path = window.location.pathname.split("/");
+  if (path[1] === "videos" && path[2]) {
+    // VOD page: try to get channel name from the page
+    const el = document.querySelector('[data-a-target="streamer-name"]');
+    return el ? el.textContent.trim().toLowerCase() : null;
+  }
   return path[1] || null;
 }
 
@@ -20,11 +25,13 @@ function updateTime() {
   const now = Date.now();
   const elapsed = Math.floor((now - lastUpdate) / 1000);
   if (!isWatching || elapsed < 20) return;
-  console.log(`[Twitch Tracker] will save ${elapsed} seconds`);
 
   const channel = getChannelName();
   const category = getCategory();
-  if (!channel || !category) return;
+  console.log(
+    `[Twitch Tracker] will save ${elapsed} seconds for channel: ${channel}, category: ${category}`
+  );
+  if (!channel) return;
 
   try {
     if (
