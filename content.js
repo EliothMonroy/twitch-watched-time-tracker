@@ -4,34 +4,23 @@ let lastUpdate = Date.now();
 function getChannelName() {
   const path = window.location.pathname.split("/");
   if (path[1] === "videos" && path[2]) {
-    // VOD page: try multiple selectors for channel name
-    let el = document.querySelector('[data-a-target="streamer-name"]');
-    if (el) return el.textContent.trim().toLowerCase();
-    // Try .channel-info-content a (first anchor)
-    el = document.querySelector(".channel-info-content a");
-    if (el) return el.textContent.trim().toLowerCase();
-    // Try any anchor with a path that is not /videos/
-    const anchors = document.querySelectorAll('a[href^="/"]');
-    for (const a of anchors) {
-      if (!a.getAttribute("href").startsWith("/videos/")) {
-        return a.textContent.trim().toLowerCase();
-      }
-    }
-    return null;
+    // VOD
+    let el = document.querySelector('[data-test-selector="ChannelLink"]');
+    return el?.textContent.trim().toLowerCase() || null;
   }
   return path[1] || null;
 }
 
 function getCategory() {
-  let el = document.querySelector('[data-a-target="stream-game-link"]');
-  if (el) return el.textContent.trim();
-  // Try .tw-link[data-test-selector="CategoryLink"]
-  el = document.querySelector('.tw-link[data-test-selector="CategoryLink"]');
-  if (el) return el.textContent.trim();
-  // Try .channel-info-content a:last-child
-  el = document.querySelector(".channel-info-content a:last-child");
-  if (el) return el.textContent.trim();
-  return "Unknown";
+  let category = document.querySelector('[data-a-target="stream-game-link"]');
+  let categoryFallback = document.querySelector(
+    '[data-test-selector="GameLink"]'
+  );
+  return (
+    category?.textContent.trim() ||
+    categoryFallback?.textContent.trim() ||
+    "Unknown"
+  );
 }
 
 function isPlaying() {
