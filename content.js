@@ -12,7 +12,18 @@ function getChannelName() {
 }
 
 function getCategory() {
-  let category = document.querySelector('[data-a-target="stream-game-link"]');
+  let category = "Unknown";
+  let categories = document.querySelectorAll(
+    '[data-a-target="stream-game-link"]'
+  );
+  // validation for Streaming Together, loop through categories until we find a category that is not a Streaming Together category
+  for (let option of categories) {
+    if (!option.textContent.includes("Streaming Together")) {
+      category = option;
+      break;
+    }
+  }
+
   let categoryFallback = document.querySelector(
     '[data-test-selector="GameLink"]'
   );
