@@ -1,15 +1,3 @@
-function formatTime(seconds) {
-  const days = Math.floor(seconds / 86400);
-  const hours = Math.floor((seconds % 86400) / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-
-  const parts = [];
-  if (days) parts.push(`${days}d`);
-  if (hours) parts.push(`${hours}h`);
-  if (minutes || parts.length === 0) parts.push(`${minutes}m`);
-  return parts.join(" ");
-}
-
 function sortChannels(stats) {
   return Object.entries(stats)
     .map(([channel, categories]) => {
@@ -37,7 +25,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const channelDiv = document.createElement("div");
       channelDiv.className = "channel";
 
-      const totalTime = formatTime(total);
+      const totalTime = formatTimeSmart(total);
       channelDiv.innerHTML = `<div class="total">${
         index + 1
       }. ${channel} - ${totalTime}</div>`;

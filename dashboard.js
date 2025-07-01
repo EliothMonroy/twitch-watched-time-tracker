@@ -1,11 +1,5 @@
 Chart.register(ChartDataLabels);
 
-function formatTime(seconds) {
-  const hours = Math.floor(seconds / 3600);
-  const minutes = Math.floor((seconds % 3600) / 60);
-  return `${hours}h ${minutes}m`;
-}
-
 function buildChart(data) {
   const labels = data.map((d) => d.channel);
   const times = data.map((d) => d.total / 3600); // convert seconds to hours
@@ -71,7 +65,7 @@ function buildChart(data) {
           callbacks: {
             label: function (context) {
               const value = context.raw * 3600; // convert hours to seconds
-              return formatHoursMinutes(value);
+              return formatTimeSmart(value);
             },
           },
         },
@@ -149,7 +143,7 @@ function buildCategoryChart(categoryStats) {
           callbacks: {
             label: function (context) {
               const value = context.raw * 3600; // convert hours to seconds
-              return formatHoursMinutes(value);
+              return formatTimeSmart(value);
             },
           },
         },
@@ -180,30 +174,4 @@ function buildCategoryChart(categoryStats) {
       },
     },
   });
-}
-
-function formatTimeSmart(seconds) {
-  const mins = Math.floor(seconds / 60);
-  const months = Math.floor(mins / 43200); // 30 days * 24h * 60m
-  const days = Math.floor((mins % 43200) / 1440); // 1 day = 1440 mins
-  const hours = Math.floor((mins % 1440) / 60);
-  const minutes = mins % 60;
-
-  const parts = [];
-  if (months > 0) parts.push(`${months}mo`);
-  if (days > 0) parts.push(`${days}d`);
-  if (hours > 0) parts.push(`${hours}h`);
-  if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`);
-  return parts.join(" ");
-}
-
-function formatHoursMinutes(seconds) {
-  const totalMinutes = Math.floor(seconds / 60);
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  const parts = [];
-  if (hours > 0) parts.push(`${hours}h`);
-  if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`);
-  return parts.join(" ");
 }
