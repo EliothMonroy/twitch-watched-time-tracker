@@ -50,27 +50,18 @@ function updateTime() {
     `[Twitch Tracker] will save ${elapsed} seconds for channel: ${channel}, category: ${category}`
   );
   if (!channel) return;
-
-  try {
-    if (
-      typeof chrome !== "undefined" &&
-      chrome.storage &&
-      chrome.storage.local
-    ) {
-      chrome.storage.local.get("stats", (data) => {
-        const stats = data.stats || {};
-        stats[channel] = stats[channel] || {};
-        stats[channel][category] = (stats[channel][category] || 0) + elapsed;
-        chrome.storage.local.set({ stats });
-      });
+  chrome.runtime.sendMessage(
+    {
+      type: "incrementStat",
+      channel,
+      category,
+      elapsed,
+    },
+    (resp) => {
+      if (!resp?.success)
+        console.error("[Twitch Tracker] Failed to update stat");
     }
-  } catch (e) {
-    if (e.message && e.message.includes("Extension context invalidated")) {
-      // Silently ignore extension context invalidation errors
-    } else {
-      throw e;
-    }
-  }
+  );
 
   lastUpdate = now;
 }
