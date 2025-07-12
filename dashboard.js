@@ -1,4 +1,5 @@
 Chart.register(ChartDataLabels);
+const maxItems = 20;
 
 function buildChart(data) {
   const labels = data.map((d) => d.channel);
@@ -92,7 +93,7 @@ chrome.storage.local.get("stats", (result) => {
 
   // Sort and build both charts
   channelTotals.sort((a, b) => b.total - a.total);
-  buildChart(channelTotals);
+  buildChart(channelTotals.slice(0, maxItems));
   buildCategoryChart(categoryTotals);
 });
 
@@ -100,7 +101,8 @@ function buildCategoryChart(categoryStats) {
   // Convert to array and sort
   const sorted = Object.entries(categoryStats)
     .filter(([name]) => name.toLowerCase() !== "unknown")
-    .sort((a, b) => b[1] - a[1]); // descending by seconds
+    .sort((a, b) => b[1] - a[1]) // descending by seconds
+    .slice(0, maxItems);
 
   const labels = sorted.map(([cat]) => cat);
   const values = sorted.map(([_, sec]) => sec / 3600);
