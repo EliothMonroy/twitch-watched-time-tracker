@@ -28,8 +28,8 @@ function getCategory() {
     '[data-test-selector="GameLink"]'
   );
   return (
-    category?.textContent.trim() ||
-    categoryFallback?.textContent.trim() ||
+    category?.textContent?.trim() ||
+    categoryFallback?.textContent?.trim() ||
     "Unknown"
   );
 }
