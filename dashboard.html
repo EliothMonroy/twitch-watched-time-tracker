@@ -1,37 +1,377 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
   <head>
-    <title>Twitch Stats Dashboard</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Twitch Watch Time</title>
     <style>
-      body {
-        font-family: Arial, sans-serif;
-        margin: 20px;
-        background: #fff;
-        color: #000;
-        transition: background 0.3s, color 0.3s;
+      :root {
+        --bg: #0e0e10;
+        --bg-elevated: #18181b;
+        --bg-hover: #1f1f23;
+        --border: rgba(255, 255, 255, 0.08);
+        --text: #efeff1;
+        --muted: #adadb8;
+        --purple: #9146ff;
+        --purple-soft: rgba(145, 70, 255, 0.18);
+        --blue: #53c4ff;
+        --orange: #ffb86b;
+        --shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+        --radius: 16px;
+        --font: "Segoe UI", system-ui, -apple-system, sans-serif;
       }
 
-      @media (prefers-color-scheme: dark) {
-        body {
-          background: #121212;
-          color: #f0f0f0;
+      @media (prefers-color-scheme: light) {
+        :root {
+          --bg: #f4f2f7;
+          --bg-elevated: #ffffff;
+          --bg-hover: #f7f5fb;
+          --border: rgba(20, 16, 32, 0.08);
+          --text: #18181b;
+          --muted: #53535f;
+          --purple-soft: rgba(145, 70, 255, 0.12);
+          --shadow: 0 16px 40px rgba(24, 24, 27, 0.08);
         }
       }
 
-      canvas {
-        max-width: 100%;
-        margin-bottom: 30px;
+      * {
+        box-sizing: border-box;
       }
 
-      h2 {
-        margin-top: 0;
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--font);
+      }
+
+      body {
+        background-image:
+          radial-gradient(ellipse 80% 50% at 10% -10%, rgba(145, 70, 255, 0.22), transparent),
+          radial-gradient(ellipse 60% 40% at 100% 0%, rgba(83, 196, 255, 0.08), transparent);
+      }
+
+      .page {
+        max-width: 1120px;
+        margin: 0 auto;
+        padding: 32px 24px 64px;
+      }
+
+      header {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 28px;
+      }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+
+      .logo {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        background: linear-gradient(145deg, #bf94ff, var(--purple));
+        display: grid;
+        place-items: center;
+        box-shadow: 0 0 0 6px var(--purple-soft);
+      }
+
+      .logo svg {
+        width: 22px;
+        height: 22px;
+        fill: #fff;
+      }
+
+      h1 {
+        margin: 0;
+        font-size: 1.7rem;
+        letter-spacing: -0.03em;
+      }
+
+      .subtitle {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 0.95rem;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 14px;
+        margin-bottom: 20px;
+      }
+
+      .stat-card,
+      .toolbar,
+      .chart-card {
+        background: var(--bg-elevated);
+        border: 1px solid var(--border);
+        border-radius: var(--radius);
+        box-shadow: var(--shadow);
+      }
+
+      .stat-card {
+        padding: 18px 20px;
+      }
+
+      .stat-label {
+        color: var(--muted);
+        font-size: 0.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        margin-bottom: 6px;
+      }
+
+      .stat-value {
+        font-size: 1.35rem;
+        font-weight: 700;
+        letter-spacing: -0.03em;
+      }
+
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 16px 20px;
+        margin-bottom: 20px;
+      }
+
+      .toolbar-label {
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+
+      .toolbar-controls {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 12px;
+        flex: 1;
+        justify-content: flex-end;
+      }
+
+      .chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .chip {
+        appearance: none;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text);
+        border-radius: 999px;
+        padding: 7px 12px;
+        font: inherit;
+        font-size: 0.85rem;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s, color 0.15s;
+      }
+
+      .chip:hover {
+        background: var(--bg-hover);
+        border-color: var(--purple);
+      }
+
+      .chip.active {
+        background: var(--purple);
+        border-color: var(--purple);
+        color: #fff;
+      }
+
+      .slider-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: min(280px, 100%);
+      }
+
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 160px;
+        height: 6px;
+        border-radius: 999px;
+        background: var(--purple-soft);
+        outline: none;
+      }
+
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--purple);
+        cursor: pointer;
+        box-shadow: 0 0 0 4px var(--purple-soft);
+      }
+
+      .count-readout {
+        min-width: 4.5rem;
+        color: var(--muted);
+        font-size: 0.85rem;
+        font-variant-numeric: tabular-nums;
+      }
+
+      .charts {
+        display: grid;
+        gap: 20px;
+      }
+
+      .chart-card {
+        padding: 22px 22px 12px;
+      }
+
+      .chart-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .chart-header h2 {
+        margin: 0;
+        font-size: 1.1rem;
+      }
+
+      .chart-meta {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+
+      .chart-wrap {
+        position: relative;
+        width: 100%;
+        height: 280px;
+      }
+
+      canvas {
+        width: 100% !important;
+        height: 100% !important;
+      }
+
+      .empty {
+        text-align: center;
+        padding: 72px 20px;
+        color: var(--muted);
+      }
+
+      .empty h2 {
+        color: var(--text);
+        margin-bottom: 8px;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+
+      @media (max-width: 720px) {
+        .stats {
+          grid-template-columns: 1fr;
+        }
+
+        .toolbar-controls {
+          justify-content: flex-start;
+        }
+
+        header {
+          margin-bottom: 20px;
+        }
       }
     </style>
   </head>
   <body>
-    <h2>Twitch Time Watched Dashboard</h2>
-    <canvas id="channelChart" width="400" height="200"></canvas>
-    <canvas id="categoryChart" width="400" height="200"></canvas>
+    <div class="page">
+      <header>
+        <div class="brand">
+          <div class="logo" aria-hidden="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9zm0 16.2A7.2 7.2 0 1 1 19.2 12 7.2 7.2 0 0 1 12 19.2zm.75-11.7h-1.8v5.1l4.35 2.61.9-1.47-3.45-2.07z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h1>Watch time dashboard</h1>
+            <p class="subtitle">Time spent across Twitch channels and categories</p>
+          </div>
+        </div>
+      </header>
+
+      <section id="empty-state" class="empty hidden" hidden>
+        <h2>No watch data yet</h2>
+        <p>Watch a stream and this dashboard will fill in with your totals.</p>
+      </section>
+
+      <div id="dashboard-content">
+        <section class="stats" aria-label="Summary">
+          <article class="stat-card">
+            <div class="stat-label">Total watched</div>
+            <div class="stat-value" id="stat-total">—</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-label">Channels</div>
+            <div class="stat-value" id="stat-channels">—</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-label">Categories</div>
+            <div class="stat-value" id="stat-categories">—</div>
+          </article>
+        </section>
+
+        <section class="toolbar" aria-label="Chart size">
+          <div class="toolbar-label">Items in charts</div>
+          <div class="toolbar-controls">
+            <div class="chips" id="limit-chips" role="group" aria-label="Preset item counts"></div>
+            <div class="slider-wrap">
+              <input
+                type="range"
+                id="limit-slider"
+                min="1"
+                max="20"
+                value="10"
+                aria-label="Number of items to show"
+              />
+              <span class="count-readout" id="limit-readout">10</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="charts">
+          <article class="chart-card">
+            <div class="chart-header">
+              <h2>Top channels</h2>
+              <span class="chart-meta" id="channel-meta"></span>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="channelChart" height="280"></canvas>
+            </div>
+          </article>
+          <article class="chart-card">
+            <div class="chart-header">
+              <h2>Top categories</h2>
+              <span class="chart-meta" id="category-meta"></span>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="categoryChart" height="280"></canvas>
+            </div>
+          </article>
+        </section>
+      </div>
+    </div>
+
     <script src="chart.umd.js"></script>
     <script src="chartjs-plugin-datalabels@2.js"></script>
     <script src="utils.js"></script>
