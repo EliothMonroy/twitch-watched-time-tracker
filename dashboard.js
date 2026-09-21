@@ -1,6 +1,6 @@
 Chart.register(ChartDataLabels);
 
-const PRESET_LIMITS = [5, 10, 20, 50];
+const PRESET_LIMITS = [5, 10, 15, 20, 25, 30, 40];
 const STORAGE_KEY = "dashboardItemLimit";
 const DEFAULT_LIMIT = 10;
 const BAR_ROW_PX = 38;
@@ -14,12 +14,11 @@ const labelColor = isDark ? "#efeff1" : "#18181b";
 
 let channelTotals = [];
 let categoryTotals = [];
-let itemLimit = DEFAULT_LIMIT;
+let selectedLimit = DEFAULT_LIMIT;
 let channelChartInstance = null;
 let categoryChartInstance = null;
 
 const chipsEl = document.getElementById("limit-chips");
-const sliderEl = document.getElementById("limit-slider");
 const readoutEl = document.getElementById("limit-readout");
 const emptyEl = document.getElementById("empty-state");
 const contentEl = document.getElementById("dashboard-content");
@@ -28,20 +27,27 @@ function maxAvailableItems() {
   return Math.max(channelTotals.length, categoryTotals.length, 1);
 }
 
-function clampLimit(value) {
+function snapToPreset(value) {
+  if (value === "all") return "all";
+  const n = Number(value);
+  if (!Number.isFinite(n) || n <= 0) return DEFAULT_LIMIT;
+
+  let closest = PRESET_LIMITS[0];
+  for (const preset of PRESET_LIMITS) {
+    if (Math.abs(preset - n) < Math.abs(closest - n)) closest = preset;
+  }
+  return closest;
+}
+
+function currentItemCount() {
   const max = maxAvailableItems();
-  if (value === "all" || value >= max) return max;
-  return Math.max(1, Math.min(max, Number(value) || DEFAULT_LIMIT));
+  if (selectedLimit === "all") return max;
+  return Math.min(selectedLimit, max);
 }
 
-function isShowingAll() {
-  return itemLimit >= maxAvailableItems();
-}
-
-function persistLimit(limit) {
-  const value = isShowingAll() ? "all" : limit;
+function persistLimit() {
   if (typeof chrome !== "undefined" && chrome.storage?.local) {
-    chrome.storage.local.set({ [STORAGE_KEY]: value });
+    chrome.storage.local.set({ [STORAGE_KEY]: selectedLimit });
   }
 }
 
@@ -177,7 +183,7 @@ function updateMeta(el, shown, total) {
 }
 
 function renderCharts() {
-  const limit = clampLimit(itemLimit);
+  const limit = currentItemCount();
   const channels = channelTotals.slice(0, limit);
   const categories = categoryTotals.slice(0, limit);
 
@@ -200,36 +206,35 @@ function renderChips() {
   const max = maxAvailableItems();
   chipsEl.innerHTML = "";
 
-  PRESET_LIMITS.filter((n) => n < max).forEach((n) => {
+  PRESET_LIMITS.forEach((n) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = "chip" + (itemLimit === n && !isShowingAll() ? " active" : "");
+    button.className = "chip" + (selectedLimit === n ? " active" : "");
     button.textContent = String(n);
+    button.disabled = n > max;
     button.addEventListener("click", () => setLimit(n));
     chipsEl.appendChild(button);
   });
 
   const allBtn = document.createElement("button");
   allBtn.type = "button";
-  allBtn.className = "chip" + (isShowingAll() ? " active" : "");
+  allBtn.className = "chip" + (selectedLimit === "all" ? " active" : "");
   allBtn.textContent = "All";
-  allBtn.addEventListener("click", () => setLimit(max));
+  allBtn.addEventListener("click", () => setLimit("all"));
   chipsEl.appendChild(allBtn);
 }
 
 function syncControls() {
   const max = maxAvailableItems();
-  const limit = clampLimit(itemLimit);
-  sliderEl.min = "1";
-  sliderEl.max = String(max);
-  sliderEl.value = String(limit);
-  readoutEl.textContent = isShowingAll() ? `All (${max})` : `${limit} of ${max}`;
+  const shown = currentItemCount();
+  readoutEl.textContent =
+    selectedLimit === "all" ? `All (${max})` : `${shown} of ${max}`;
   renderChips();
 }
 
 function setLimit(next) {
-  itemLimit = clampLimit(next);
-  persistLimit(itemLimit);
+  selectedLimit = next === "all" ? "all" : snapToPreset(next);
+  persistLimit();
   syncControls();
   renderCharts();
 }
@@ -261,15 +266,6 @@ function aggregateStats(stats) {
   return { channels, categories: sortedCategories };
 }
 
-function initControls() {
-  sliderEl.addEventListener("input", () => {
-    itemLimit = Number(sliderEl.value);
-    persistLimit(itemLimit);
-    syncControls();
-    renderCharts();
-  });
-}
-
 function startDashboard(stats, storedLimit) {
   const aggregated = aggregateStats(stats);
   channelTotals = aggregated.channels;
@@ -281,11 +277,7 @@ function startDashboard(stats, storedLimit) {
   }
 
   showEmpty(false);
-  itemLimit =
-    storedLimit === "all"
-      ? maxAvailableItems()
-      : clampLimit(storedLimit || DEFAULT_LIMIT);
-  initControls();
+  selectedLimit = snapToPreset(storedLimit || DEFAULT_LIMIT);
   syncControls();
   renderSummary();
   renderCharts();
@@ -296,24 +288,25 @@ if (typeof chrome !== "undefined" && chrome.storage?.local) {
     startDashboard(result.stats || {}, result[STORAGE_KEY]);
   });
 } else {
-  startDashboard(
-    {
-      xqc: { "Just Chatting": 180000, Minecraft: 54000 },
-      pokimane: { "Just Chatting": 92000, Valorant: 41000 },
-      shroud: { Valorant: 76000, "Call of Duty": 28000 },
-      kai_cenat: { "Just Chatting": 210000 },
-      tarik: { Valorant: 64000, "Just Chatting": 18000 },
-      lcs: { "League of Legends": 120000 },
-      summit1g: { GTA: 88000, "Just Chatting": 22000 },
-      sodapoppin: { WoW: 70000, "Just Chatting": 30000 },
-      hasanabi: { "Just Chatting": 150000, "React": 24000 },
-      ninja: { Fortnite: 99000 },
-      sykkuno: { "Among Us": 45000, "Just Chatting": 36000 },
-      ludwig: { "Just Chatting": 81000, Variety: 19000 },
-      pokelawls: { "Resident Evil": 33000 },
-      mizkif: { "Just Chatting": 61000 },
-      esfandtv: { WoW: 27000, "Just Chatting": 14000 },
-    },
-    DEFAULT_LIMIT
-  );
+  const previewStats = {
+    xqc: { "Just Chatting": 180000, Minecraft: 54000 },
+    pokimane: { "Just Chatting": 92000, Valorant: 41000 },
+    shroud: { Valorant: 76000, "Call of Duty": 28000 },
+    kai_cenat: { "Just Chatting": 210000 },
+    tarik: { Valorant: 64000, "Just Chatting": 18000 },
+    lcs: { "League of Legends": 120000 },
+    summit1g: { GTA: 88000, "Just Chatting": 22000 },
+    sodapoppin: { WoW: 70000, "Just Chatting": 30000 },
+    hasanabi: { "Just Chatting": 150000, React: 24000 },
+    ninja: { Fortnite: 99000 },
+    sykkuno: { "Among Us": 45000, "Just Chatting": 36000 },
+    ludwig: { "Just Chatting": 81000, Variety: 19000 },
+    pokelawls: { "Resident Evil": 33000 },
+    mizkif: { "Just Chatting": 61000 },
+    esfandtv: { WoW: 27000, "Just Chatting": 14000 },
+  };
+  for (let i = 1; i <= 30; i += 1) {
+    previewStats[`channel_${i}`] = { Variety: 3600 * (31 - i) };
+  }
+  startDashboard(previewStats, DEFAULT_LIMIT);
 }
