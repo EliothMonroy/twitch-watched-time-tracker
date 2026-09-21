@@ -190,35 +190,18 @@
         color: #fff;
       }
 
-      .slider-wrap {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        min-width: min(280px, 100%);
+      .chip:disabled {
+        opacity: 0.38;
+        cursor: not-allowed;
+        border-color: var(--border);
       }
 
-      input[type="range"] {
-        -webkit-appearance: none;
-        appearance: none;
-        width: 160px;
-        height: 6px;
-        border-radius: 999px;
-        background: var(--purple-soft);
-        outline: none;
-      }
-
-      input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: var(--purple);
-        cursor: pointer;
-        box-shadow: 0 0 0 4px var(--purple-soft);
+      .chip:disabled:hover {
+        background: transparent;
+        border-color: var(--border);
       }
 
       .count-readout {
-        min-width: 4.5rem;
         color: var(--muted);
         font-size: 0.85rem;
         font-variant-numeric: tabular-nums;
@@ -335,17 +318,7 @@
           <div class="toolbar-label">Items in charts</div>
           <div class="toolbar-controls">
             <div class="chips" id="limit-chips" role="group" aria-label="Preset item counts"></div>
-            <div class="slider-wrap">
-              <input
-                type="range"
-                id="limit-slider"
-                min="1"
-                max="20"
-                value="10"
-                aria-label="Number of items to show"
-              />
-              <span class="count-readout" id="limit-readout">10</span>
-            </div>
+            <span class="count-readout" id="limit-readout">10</span>
           </div>
         </section>
 
