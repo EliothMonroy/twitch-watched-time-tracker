@@ -106,7 +106,7 @@
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
         gap: 14px;
-        margin-bottom: 20px;
+        margin-top: 20px;
       }
 
       .stat-card,
@@ -299,21 +299,6 @@
       </section>
 
       <div id="dashboard-content">
-        <section class="stats" aria-label="Summary">
-          <article class="stat-card">
-            <div class="stat-label">Total watched</div>
-            <div class="stat-value" id="stat-total">—</div>
-          </article>
-          <article class="stat-card">
-            <div class="stat-label">Channels</div>
-            <div class="stat-value" id="stat-channels">—</div>
-          </article>
-          <article class="stat-card">
-            <div class="stat-label">Categories</div>
-            <div class="stat-value" id="stat-categories">—</div>
-          </article>
-        </section>
-
         <section class="toolbar" aria-label="Chart size">
           <div class="toolbar-label">Items in charts</div>
           <div class="toolbar-controls">
@@ -340,6 +325,21 @@
             <div class="chart-wrap">
               <canvas id="categoryChart" height="280"></canvas>
             </div>
+          </article>
+        </section>
+
+        <section class="stats" aria-label="Summary">
+          <article class="stat-card">
+            <div class="stat-label">Total watched</div>
+            <div class="stat-value" id="stat-total">—</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-label">Channels</div>
+            <div class="stat-value" id="stat-channels">—</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-label">Categories</div>
+            <div class="stat-value" id="stat-categories">—</div>
           </article>
         </section>
       </div>
