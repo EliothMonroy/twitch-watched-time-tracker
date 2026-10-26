@@ -40,7 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
       "Are you sure you want to clear all watch data? This cannot be undone."
     );
     if (confirmed) {
-      chrome.storage.local.clear(() => {
+      // Only remove watch data; keep settings like the dashboard chart size.
+      chrome.storage.local.remove("stats", () => {
         alert("✅ All data has been cleared.");
         location.reload(); // Optional: Refresh to reflect the reset state
       });
