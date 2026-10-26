@@ -8,6 +8,26 @@ function sortChannels(stats) {
     .sort((a, b) => b.total - a.total);
 }
 
+// Parses manual watch time: "90" (minutes) or "H:MM" (e.g. "1:05").
+// Returns a positive whole number of minutes, or null if the input is invalid.
+function parseWatchTimeMinutes(input) {
+  if (typeof input !== "string") return null;
+  const text = input.trim();
+
+  let minutes = null;
+  if (/^\d+$/.test(text)) {
+    minutes = Number(text);
+  } else {
+    const match = /^(\d+):([0-5]\d)$/.exec(text);
+    if (match) minutes = Number(match[1]) * 60 + Number(match[2]);
+  }
+
+  if (minutes === null || !Number.isSafeInteger(minutes * 60) || minutes <= 0) {
+    return null;
+  }
+  return minutes;
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const container = document.getElementById("channel-list");
 
@@ -75,26 +95,31 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!channel) return;
 
     const category = prompt("Category (e.g., Just Chatting — optional):");
-    const timeStr = prompt("Initial watch time (in minutes or HH:MM format):");
-    if (!timeStr) return;
+    const timeStr = prompt(
+      "Watch time to add: minutes (e.g., 90) or hours:minutes (e.g., 1:30):"
+    );
+    if (timeStr === null) return;
 
-    // Parse time input
-    let minutes = 0;
-    if (/^\d+:\d{2}$/.test(timeStr)) {
-      const [h, m] = timeStr.split(":").map(Number);
-      minutes = h * 60 + m;
-    } else {
-      minutes = parseInt(timeStr);
+    const minutes = parseWatchTimeMinutes(timeStr);
+    if (minutes === null) {
+      alert(
+        "❌ Invalid time. Enter whole minutes (e.g., 90) or hours:minutes (e.g., 1:30)."
+      );
+      return;
     }
 
-    const seconds = minutes * 60;
     const catKey = category || "Unknown";
     // Go through the background so this can't race with tracked saves.
     chrome.runtime.sendMessage(
-      { type: "incrementStat", channel, category: catKey, elapsed: seconds },
+      {
+        type: "incrementStat",
+        channel,
+        category: catKey,
+        elapsed: minutes * 60,
+      },
       (resp) => {
         if (!resp?.success) {
-          alert("❌ Could not add watch time. Check the time you entered.");
+          alert("❌ Could not add watch time: " + (resp?.error || "unknown error"));
           return;
         }
         alert(`Added ${minutes} minutes to ${channel} (${catKey})`);
