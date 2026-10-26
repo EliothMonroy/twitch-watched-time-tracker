@@ -91,17 +91,19 @@ describe("incrementStat", () => {
 
   test(
     'saves a channel named "constructor"',
-    {
-      todo:
-        "bug: stats is a normal object, so stats.constructor is Object.prototype.constructor; " +
-        "the seconds are set on the Object function and never saved",
-    },
     async () => {
       const env = loadBackground({ initial: { stats: {} } });
       assert.deepEqual(await env.send(inc("constructor", "Gaming", 20)), OK);
       assert.deepEqual(env.stored(), { stats: { constructor: { Gaming: 20 } } });
     }
   );
+
+  test('adds to a category named like a built-in property ("toString")', async () => {
+    const env = loadBackground({ initial: { stats: { xqc: { toString: 5 } } } });
+    assert.deepEqual(await env.send(inc("xqc", "toString", 20)), OK);
+    assert.deepEqual(await env.send(inc("xqc", "valueOf", 3)), OK);
+    assert.deepEqual(env.stored(), { stats: { xqc: { toString: 25, valueOf: 3 } } });
+  });
 });
 
 describe("write queue", () => {

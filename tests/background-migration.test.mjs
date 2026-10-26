@@ -114,6 +114,20 @@ describe("channel key migration", () => {
     });
   }
 
+  test('merges into a channel named "constructor"', async () => {
+    const env = loadBackground({
+      initial: { stats: { Constructor: { A: 2 }, constructor: { A: 3 }, " CONSTRUCTOR": { B: 1 } } },
+    });
+    await migrate(env);
+    assert.deepEqual(env.stored(), { stats: { constructor: { A: 5, B: 1 } } });
+  });
+
+  test('renames "Constructor" when no lowercase key exists yet', async () => {
+    const env = loadBackground({ initial: { stats: { Constructor: { A: 2 } } } });
+    await migrate(env);
+    assert.deepEqual(env.stored(), { stats: { constructor: { A: 2 } } });
+  });
+
   test("goes through the write queue, so a concurrent increment isn't lost", async () => {
     const env = loadBackground({
       initial: { stats: { xQc: { A: 10 }, xqc: { A: 5, B: 1 }, " XQC ": { B: 2 } } },
