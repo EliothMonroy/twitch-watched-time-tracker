@@ -28,3 +28,9 @@ jobs:
 
       - name: Check manifest and page scripts
         run: node scripts/check-extension.mjs
+
+      - name: Install lint dependencies
+        run: npm ci
+
+      - name: Lint JavaScript
+        run: npm run lint
