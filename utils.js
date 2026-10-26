@@ -1,3 +1,36 @@
+// First path segments on twitch.tv that are not channel pages. Older versions
+// stored some of them as if they were channels (e.g. "videos", "moderator"),
+// so the popup and dashboard hide them. content.js keeps a matching list so it
+// stops recording them; keep the two lists in sync.
+const NON_CHANNEL_PATHS = new Set([
+  "videos",
+  "moderator",
+  "directory",
+  "settings",
+  "search",
+  "downloads",
+  "subscriptions",
+  "inventory",
+  "drops",
+  "wallet",
+  "friends",
+  "messages",
+  "turbo",
+  "prime",
+  "jobs",
+  "p",
+  "u",
+  "popout",
+  "following",
+]);
+
+function isNonChannelPath(channel) {
+  return (
+    typeof channel === "string" &&
+    NON_CHANNEL_PATHS.has(channel.trim().toLowerCase())
+  );
+}
+
 function formatTimeSmart(seconds) {
   const safeSeconds = Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
   const mins = Math.floor(safeSeconds / 60);
