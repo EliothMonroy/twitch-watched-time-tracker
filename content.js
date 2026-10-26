@@ -1,4 +1,5 @@
 const TICK_INTERVAL_MS = 20000;
+const MIN_ELAPSED_SECONDS = TICK_INTERVAL_MS / 1000;
 // Hidden tabs can be throttled to ~1 tick/min, so allow some headroom; longer gaps mean sleep or a frozen tab.
 const MAX_ELAPSED_SECONDS = 120;
 
@@ -31,18 +32,35 @@ let isWatching = false;
 let lastUpdate = Date.now();
 let tickTimer = null;
 
+function normalizeChannel(name) {
+  return name?.trim().toLowerCase() || null;
+}
+
+// On a VOD page, use the channel link's href (the login) rather than its text,
+// which is the display name and can differ (e.g. non-Latin display names).
+function getVodChannel() {
+  const link = document.querySelector('[data-test-selector="ChannelLink"]');
+  if (!link) return null;
+  const href = link.getAttribute("href");
+  if (href) {
+    try {
+      const login = new URL(href, window.location.origin).pathname.split("/")[1];
+      if (login) return login;
+    } catch {
+      // Fall back to the link text below.
+    }
+  }
+  return link.textContent;
+}
+
 function getChannelName() {
   const [, first = "", second = ""] = window.location.pathname.split("/");
   const segment = first.toLowerCase();
-  if (segment === "videos" && second) {
-    // VOD
-    let el = document.querySelector('[data-test-selector="ChannelLink"]');
-    return el?.textContent.trim().toLowerCase() || null;
-  }
+  if (segment === "videos") return second ? normalizeChannel(getVodChannel()) : null;
   // Mod View (/moderator/<channel>) is watching that channel.
-  if (segment === "moderator") return second || null;
+  if (segment === "moderator") return normalizeChannel(second);
   if (NON_CHANNEL_PATHS.has(segment)) return null;
-  return first || null;
+  return normalizeChannel(first);
 }
 
 function getCategory() {
@@ -75,13 +93,16 @@ function stopTracking() {
   clearInterval(tickTimer);
   tickTimer = null;
   isWatching = false;
-  window.removeEventListener("beforeunload", updateTime);
+  window.removeEventListener("pagehide", onPageHide);
 }
 
-function updateTime() {
+// Saves the watch time since lastUpdate. Normally waits for a full tick;
+// with force (leaving the page) it flushes any whole seconds.
+function updateTime({ force = false } = {}) {
+  if (!isWatching) return;
   const now = Date.now();
   const elapsed = Math.floor((now - lastUpdate) / 1000);
-  if (!isWatching || elapsed < 20) return;
+  if (elapsed < (force ? 1 : MIN_ELAPSED_SECONDS)) return;
   if (elapsed > MAX_ELAPSED_SECONDS) {
     // Too long to be watch time: skip it and start counting fresh.
     lastUpdate = now;
@@ -100,9 +121,6 @@ function updateTime() {
     stopTracking();
     return;
   }
-  console.log(
-    `[Twitch Tracker] will save ${elapsed} seconds for channel: ${channel}, category: ${category}`
-  );
   try {
     chrome.runtime.sendMessage(
       { type: "incrementStat", channel, category, elapsed },
@@ -128,7 +146,6 @@ function tick() {
     stopTracking();
     return;
   }
-  const now = new Date().toISOString();
   const playing = isPlaying();
 
   if (playing) {
@@ -141,5 +158,9 @@ function tick() {
   }
 }
 
+function onPageHide() {
+  updateTime({ force: true });
+}
+
 tickTimer = setInterval(tick, TICK_INTERVAL_MS);
-window.addEventListener("beforeunload", updateTime);
+window.addEventListener("pagehide", onPageHide);
