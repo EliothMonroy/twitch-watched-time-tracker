@@ -302,34 +302,30 @@ function setUpImport() {
     fileInput.value = ""; // allow picking the same file again
     if (!file) return;
 
+    let stats;
     try {
-      const data = JSON.parse(await file.text());
-
-      // Validate expected format: streamer -> { category: seconds }
-      const isValid = Object.values(data).every(
-        (entry) =>
-          typeof entry === "object" &&
-          entry !== null &&
-          Object.values(entry).every((val) => typeof val === "number")
-      );
-
-      if (!isValid) {
-        alert("❌ Invalid file format.");
-        return;
-      }
-
-      const confirmed = confirm(
-        "Are you sure you want to overwrite your current stats with this file?"
-      );
-      if (!confirmed) return;
-
-      chrome.storage.local.set({ stats: data }, () => {
-        alert("✅ Stats imported successfully!");
-        loadDashboard();
-      });
+      stats = normalizeStats(JSON.parse(await file.text()));
     } catch (err) {
-      alert("❌ Failed to import stats: " + err.message);
+      alert("❌ Failed to read file: " + err.message);
+      return;
     }
+    if (!stats) {
+      alert(
+        "❌ Invalid file format. Expected { channel: { category: seconds } } " +
+          "with non-negative numbers."
+      );
+      return;
+    }
+
+    const confirmed = confirm(
+      "Are you sure you want to overwrite your current stats with this file?"
+    );
+    if (!confirmed) return;
+
+    chrome.storage.local.set({ stats }, () => {
+      alert("✅ Stats imported successfully!");
+      loadDashboard();
+    });
   });
 }
 
