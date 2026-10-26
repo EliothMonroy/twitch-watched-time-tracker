@@ -1,3 +1,7 @@
+const TICK_INTERVAL_MS = 20000;
+// Hidden tabs can be throttled to ~1 tick/min, so allow some headroom; longer gaps mean sleep or a frozen tab.
+const MAX_ELAPSED_SECONDS = 120;
+
 let isWatching = false;
 let lastUpdate = Date.now();
 
@@ -43,6 +47,11 @@ function updateTime() {
   const now = Date.now();
   const elapsed = Math.floor((now - lastUpdate) / 1000);
   if (!isWatching || elapsed < 20) return;
+  if (elapsed > MAX_ELAPSED_SECONDS) {
+    // Too long to be watch time: skip it and start counting fresh.
+    lastUpdate = now;
+    return;
+  }
 
   const channel = getChannelName();
   const category = getCategory();
@@ -78,6 +87,6 @@ setInterval(() => {
     if (isWatching) updateTime();
     isWatching = false;
   }
-}, 20000);
+}, TICK_INTERVAL_MS);
 
 window.addEventListener("beforeunload", updateTime);
