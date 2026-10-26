@@ -3,7 +3,7 @@
   "name": "Twitch Time-Watched Tracker",
   "version": "1.1",
   "description": "Track Twitch watch time by channel and category",
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage"],
   "host_permissions": ["https://www.twitch.tv/*"],
   "background": {
     "service_worker": "background.js"

@@ -2,41 +2,58 @@ const TICK_INTERVAL_MS = 20000;
 // Hidden tabs can be throttled to ~1 tick/min, so allow some headroom; longer gaps mean sleep or a frozen tab.
 const MAX_ELAPSED_SECONDS = 120;
 
+// First path segments on twitch.tv that are not channel pages.
+// Keep in sync with NON_CHANNEL_PATHS in utils.js (content.js doesn't load utils.js).
+// "videos" (VODs) and "moderator" (Mod View) are handled in getChannelName().
+const NON_CHANNEL_PATHS = new Set([
+  "directory",
+  "settings",
+  "search",
+  "downloads",
+  "subscriptions",
+  "inventory",
+  "drops",
+  "wallet",
+  "friends",
+  "messages",
+  "turbo",
+  "prime",
+  "jobs",
+  "p",
+  "u",
+  "popout",
+  "following",
+  "videos",
+  "moderator",
+]);
+
 let isWatching = false;
 let lastUpdate = Date.now();
 let tickTimer = null;
 
 function getChannelName() {
-  const path = window.location.pathname.split("/");
-  if (path[1] === "videos" && path[2]) {
+  const [, first = "", second = ""] = window.location.pathname.split("/");
+  const segment = first.toLowerCase();
+  if (segment === "videos" && second) {
     // VOD
     let el = document.querySelector('[data-test-selector="ChannelLink"]');
     return el?.textContent.trim().toLowerCase() || null;
   }
-  return path[1] || null;
+  // Mod View (/moderator/<channel>) is watching that channel.
+  if (segment === "moderator") return second || null;
+  if (NON_CHANNEL_PATHS.has(segment)) return null;
+  return first || null;
 }
 
 function getCategory() {
-  let category = "Unknown";
-  let categories = document.querySelectorAll(
-    '[data-a-target="stream-game-link"]'
-  );
-  // validation for Streaming Together, loop through categories until we find a category that is not a Streaming Together category
-  for (let option of categories) {
-    if (!option.textContent.includes("Streaming Together")) {
-      category = option;
-      break;
-    }
+  // Skip "Streaming Together" links and take the first real category.
+  const links = document.querySelectorAll('[data-a-target="stream-game-link"]');
+  for (const link of links) {
+    const text = link.textContent?.trim();
+    if (text && !text.includes("Streaming Together")) return text;
   }
-
-  let categoryFallback = document.querySelector(
-    '[data-test-selector="GameLink"]'
-  );
-  return (
-    category?.textContent?.trim() ||
-    categoryFallback?.textContent?.trim() ||
-    "Unknown"
-  );
+  const fallback = document.querySelector('[data-test-selector="GameLink"]');
+  return fallback?.textContent?.trim() || "Unknown";
 }
 
 function isPlaying() {
@@ -99,7 +116,8 @@ function updateTime() {
     return;
   }
 
-  lastUpdate = now;
+  // Advance by exactly the seconds sent so the leftover fraction carries over.
+  lastUpdate += elapsed * 1000;
 }
 
 function tick() {
