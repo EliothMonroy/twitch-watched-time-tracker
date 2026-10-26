@@ -12,6 +12,19 @@ function enqueueWrite(job) {
   return result;
 }
 
+// Runs `job` through the write queue and replies { success } when it settles.
+// `what` describes the job for the error log ("failed to <what>").
+// Returns true so the listener keeps the message channel open for sendResponse.
+function replyFromQueue(job, sendResponse, what) {
+  enqueueWrite(job)
+    .then(() => sendResponse({ success: true }))
+    .catch((e) => {
+      console.error(`[Twitch Tracker] failed to ${what}:`, e);
+      sendResponse({ success: false, error: String(e?.message || e) });
+    });
+  return true;
+}
+
 // Channel keys are stored trimmed and lowercased ("xQc " -> "xqc").
 function normalizeChannel(name) {
   return typeof name === "string" ? name.trim().toLowerCase() : "";
@@ -89,15 +102,11 @@ async function incrementStat(channel, category, elapsed) {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type !== "clearStats") return;
 
-  enqueueWrite(() => chrome.storage.local.remove("stats"))
-    .then(() => sendResponse({ success: true }))
-    .catch((e) => {
-      console.error("[Twitch Tracker] failed to clear stats:", e);
-      sendResponse({ success: false, error: String(e?.message || e) });
-    });
-
-  // keep the message channel open for sendResponse
-  return true;
+  return replyFromQueue(
+    () => chrome.storage.local.remove("stats"),
+    sendResponse,
+    "clear stats"
+  );
 });
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
@@ -117,15 +126,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       ? msg.category
       : "Unknown";
 
-  enqueueWrite(() => incrementStat(channel, category, elapsed))
-    .then(() => sendResponse({ success: true }))
-    .catch((e) => {
-      console.error("[Twitch Tracker] failed to save stat:", e);
-      sendResponse({ success: false, error: String(e?.message || e) });
-    });
-
-  // keep the message channel open for sendResponse
-  return true;
+  return replyFromQueue(
+    () => incrementStat(channel, category, elapsed),
+    sendResponse,
+    "save stat"
+  );
 });
 
 // Import replaces all stats. It goes through the queue so it can't race with
@@ -139,13 +144,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     return;
   }
 
-  enqueueWrite(() => chrome.storage.local.set({ stats }))
-    .then(() => sendResponse({ success: true }))
-    .catch((e) => {
-      console.error("[Twitch Tracker] failed to replace stats:", e);
-      sendResponse({ success: false, error: String(e?.message || e) });
-    });
-
-  // keep the message channel open for sendResponse
-  return true;
+  return replyFromQueue(
+    () => chrome.storage.local.set({ stats }),
+    sendResponse,
+    "replace stats"
+  );
 });
