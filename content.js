@@ -77,7 +77,8 @@ function updateTime() {
     }
   );
 
-  lastUpdate = now;
+  // Advance by exactly the seconds sent so the leftover fraction carries over.
+  lastUpdate += elapsed * 1000;
 }
 
 setInterval(() => {
