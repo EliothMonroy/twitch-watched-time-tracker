@@ -9,6 +9,11 @@ function enqueueWrite(job) {
   return result;
 }
 
+// Channel keys are stored trimmed and lowercased ("xQc " -> "xqc").
+function normalizeChannel(name) {
+  return typeof name === "string" ? name.trim().toLowerCase() : "";
+}
+
 async function incrementStat(channel, category, elapsed) {
   const { stats = {} } = await chrome.storage.local.get("stats");
   stats[channel] = stats[channel] || {};
@@ -36,12 +41,11 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type !== "incrementStat") return;
 
-  const { channel, elapsed } = msg;
-  const valid =
-    typeof channel === "string" &&
-    channel !== "" &&
-    Number.isFinite(elapsed) &&
-    elapsed > 0;
+  // Safety net: senders should already send lowercase names, but a stray
+  // "xQc" would otherwise be saved as a different channel from "xqc".
+  const channel = normalizeChannel(msg.channel);
+  const { elapsed } = msg;
+  const valid = channel !== "" && Number.isFinite(elapsed) && elapsed > 0;
   if (!valid) {
     sendResponse({ success: false, error: "invalid incrementStat message" });
     return;
