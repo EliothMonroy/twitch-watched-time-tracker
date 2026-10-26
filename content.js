@@ -31,18 +31,35 @@ let isWatching = false;
 let lastUpdate = Date.now();
 let tickTimer = null;
 
+function normalizeChannel(name) {
+  return name?.trim().toLowerCase() || null;
+}
+
+// On a VOD page, use the channel link's href (the login) rather than its text,
+// which is the display name and can differ (e.g. non-Latin display names).
+function getVodChannel() {
+  const link = document.querySelector('[data-test-selector="ChannelLink"]');
+  if (!link) return null;
+  const href = link.getAttribute("href");
+  if (href) {
+    try {
+      const login = new URL(href, window.location.origin).pathname.split("/")[1];
+      if (login) return login;
+    } catch {
+      // Fall back to the link text below.
+    }
+  }
+  return link.textContent;
+}
+
 function getChannelName() {
   const [, first = "", second = ""] = window.location.pathname.split("/");
   const segment = first.toLowerCase();
-  if (segment === "videos" && second) {
-    // VOD
-    let el = document.querySelector('[data-test-selector="ChannelLink"]');
-    return el?.textContent.trim().toLowerCase() || null;
-  }
+  if (segment === "videos") return second ? normalizeChannel(getVodChannel()) : null;
   // Mod View (/moderator/<channel>) is watching that channel.
-  if (segment === "moderator") return second || null;
+  if (segment === "moderator") return normalizeChannel(second);
   if (NON_CHANNEL_PATHS.has(segment)) return null;
-  return first || null;
+  return normalizeChannel(first);
 }
 
 function getCategory() {
