@@ -1,4 +1,5 @@
 const TICK_INTERVAL_MS = 20000;
+const MIN_ELAPSED_SECONDS = TICK_INTERVAL_MS / 1000;
 // Hidden tabs can be throttled to ~1 tick/min, so allow some headroom; longer gaps mean sleep or a frozen tab.
 const MAX_ELAPSED_SECONDS = 120;
 
@@ -58,13 +59,16 @@ function stopTracking() {
   clearInterval(tickTimer);
   tickTimer = null;
   isWatching = false;
-  window.removeEventListener("beforeunload", updateTime);
+  window.removeEventListener("pagehide", onPageHide);
 }
 
-function updateTime() {
+// Saves the watch time since lastUpdate. Normally waits for a full tick;
+// with force (leaving the page) it flushes any whole seconds.
+function updateTime({ force = false } = {}) {
+  if (!isWatching) return;
   const now = Date.now();
   const elapsed = Math.floor((now - lastUpdate) / 1000);
-  if (!isWatching || elapsed < 20) return;
+  if (elapsed < (force ? 1 : MIN_ELAPSED_SECONDS)) return;
   if (elapsed > MAX_ELAPSED_SECONDS) {
     // Too long to be watch time: skip it and start counting fresh.
     lastUpdate = now;
@@ -123,5 +127,9 @@ function tick() {
   }
 }
 
+function onPageHide() {
+  updateTime({ force: true });
+}
+
 tickTimer = setInterval(tick, TICK_INTERVAL_MS);
-window.addEventListener("beforeunload", updateTime);
+window.addEventListener("pagehide", onPageHide);
