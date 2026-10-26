@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     container.textContent = "";
 
-    sorted.slice(0, 5).forEach(({ channel, categories, total }, index) => {
+    sorted.slice(0, 5).forEach(({ channel, total }, index) => {
       const channelDiv = document.createElement("div");
       channelDiv.className = "channel";
 
