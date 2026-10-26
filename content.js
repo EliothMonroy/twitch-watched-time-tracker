@@ -16,26 +16,14 @@ function getChannelName() {
 }
 
 function getCategory() {
-  let category = "Unknown";
-  let categories = document.querySelectorAll(
-    '[data-a-target="stream-game-link"]'
-  );
-  // validation for Streaming Together, loop through categories until we find a category that is not a Streaming Together category
-  for (let option of categories) {
-    if (!option.textContent.includes("Streaming Together")) {
-      category = option;
-      break;
-    }
+  // Skip "Streaming Together" links and take the first real category.
+  const links = document.querySelectorAll('[data-a-target="stream-game-link"]');
+  for (const link of links) {
+    const text = link.textContent?.trim();
+    if (text && !text.includes("Streaming Together")) return text;
   }
-
-  let categoryFallback = document.querySelector(
-    '[data-test-selector="GameLink"]'
-  );
-  return (
-    category?.textContent?.trim() ||
-    categoryFallback?.textContent?.trim() ||
-    "Unknown"
-  );
+  const fallback = document.querySelector('[data-test-selector="GameLink"]');
+  return fallback?.textContent?.trim() || "Unknown";
 }
 
 function isPlaying() {
