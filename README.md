@@ -58,6 +58,10 @@ Click the **"Export JSON"** button in the popup to download your watch stats.
 
 (Add screenshots of popup and dashboard here)
 
+## 🧑‍💻 Development
+
+Run `npm ci` once, then `npm test` for the unit tests (Node's built-in test runner, files in `tests/`) and `npm run lint` for ESLint.
+
 ## 🙋‍♂️ Questions or Suggestions?
 
 Feel free to open an issue or contact me.
