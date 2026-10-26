@@ -29,6 +29,7 @@ const NON_CHANNEL_PATHS = new Set([
 
 let isWatching = false;
 let lastUpdate = Date.now();
+let tickTimer = null;
 
 function getChannelName() {
   const [, first = "", second = ""] = window.location.pathname.split("/");
@@ -72,6 +73,23 @@ function isPlaying() {
   return video && !video.paused;
 }
 
+// After the extension is reloaded or updated, this script is orphaned and
+// chrome.runtime calls throw "Extension context invalidated".
+function hasExtensionContext() {
+  try {
+    return Boolean(chrome.runtime?.id);
+  } catch {
+    return false;
+  }
+}
+
+function stopTracking() {
+  clearInterval(tickTimer);
+  tickTimer = null;
+  isWatching = false;
+  window.removeEventListener("beforeunload", updateTime);
+}
+
 function updateTime() {
   const now = Date.now();
   const elapsed = Math.floor((now - lastUpdate) / 1000);
@@ -90,27 +108,38 @@ function updateTime() {
     lastUpdate = now;
     return;
   }
+  if (!hasExtensionContext()) {
+    stopTracking();
+    return;
+  }
   console.log(
     `[Twitch Tracker] will save ${elapsed} seconds for channel: ${channel}, category: ${category}`
   );
-  chrome.runtime.sendMessage(
-    {
-      type: "incrementStat",
-      channel,
-      category,
-      elapsed,
-    },
-    (resp) => {
-      if (!resp?.success)
-        console.error("[Twitch Tracker] Failed to update stat");
-    }
-  );
+  try {
+    chrome.runtime.sendMessage(
+      { type: "incrementStat", channel, category, elapsed },
+      (resp) => {
+        // Reading lastError keeps Chrome from logging "Unchecked runtime.lastError".
+        if (chrome.runtime.lastError && !hasExtensionContext()) stopTracking();
+        if (resp?.success === false)
+          console.error("[Twitch Tracker] Failed to update stat:", resp.error);
+      }
+    );
+  } catch {
+    // Throws once the extension context is invalidated.
+    stopTracking();
+    return;
+  }
 
   // Advance by exactly the seconds sent so the leftover fraction carries over.
   lastUpdate += elapsed * 1000;
 }
 
-setInterval(() => {
+function tick() {
+  if (!hasExtensionContext()) {
+    stopTracking();
+    return;
+  }
   const now = new Date().toISOString();
   const playing = isPlaying();
 
@@ -122,6 +151,7 @@ setInterval(() => {
     if (isWatching) updateTime();
     isWatching = false;
   }
-}, TICK_INTERVAL_MS);
+}
 
+tickTimer = setInterval(tick, TICK_INTERVAL_MS);
 window.addEventListener("beforeunload", updateTime);
