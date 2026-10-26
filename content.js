@@ -83,9 +83,6 @@ function updateTime() {
     stopTracking();
     return;
   }
-  console.log(
-    `[Twitch Tracker] will save ${elapsed} seconds for channel: ${channel}, category: ${category}`
-  );
   try {
     chrome.runtime.sendMessage(
       { type: "incrementStat", channel, category, elapsed },
@@ -110,7 +107,6 @@ function tick() {
     stopTracking();
     return;
   }
-  const now = new Date().toISOString();
   const playing = isPlaying();
 
   if (playing) {
