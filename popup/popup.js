@@ -1,5 +1,6 @@
 function sortChannels(stats) {
   return Object.entries(stats)
+    .filter(([channel]) => !isNonChannelPath(channel))
     .map(([channel, categories]) => {
       const total = Object.values(categories).reduce((a, b) => a + b, 0);
       return { channel, categories, total };
