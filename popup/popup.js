@@ -19,17 +19,17 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    container.innerHTML = "";
+    container.textContent = "";
 
     sorted.slice(0, 5).forEach(({ channel, categories, total }, index) => {
       const channelDiv = document.createElement("div");
       channelDiv.className = "channel";
 
-      const totalTime = formatTimeSmart(total);
-      channelDiv.innerHTML = `<div class="total">${
-        index + 1
-      }. ${channel} - ${totalTime}</div>`;
+      const totalDiv = document.createElement("div");
+      totalDiv.className = "total";
+      totalDiv.textContent = `${index + 1}. ${channel} - ${formatTimeSmart(total)}`;
 
+      channelDiv.appendChild(totalDiv);
       container.appendChild(channelDiv);
     });
   });
