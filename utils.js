@@ -1,5 +1,6 @@
 function formatTimeSmart(seconds) {
-  const mins = Math.floor(seconds / 60);
+  const safeSeconds = Number.isFinite(seconds) && seconds > 0 ? seconds : 0;
+  const mins = Math.floor(safeSeconds / 60);
   const months = Math.floor(mins / 43200); // 30 days * 24h * 60m
   const days = Math.floor((mins % 43200) / 1440); // 1 day = 1440 mins
   const hours = Math.floor((mins % 1440) / 60);
