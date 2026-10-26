@@ -46,10 +46,15 @@ function updateTime() {
 
   const channel = getChannelName();
   const category = getCategory();
+  if (!channel) {
+    // No channel on this page (e.g. the home page): drop this time so it
+    // isn't credited to the next channel the user opens.
+    lastUpdate = now;
+    return;
+  }
   console.log(
     `[Twitch Tracker] will save ${elapsed} seconds for channel: ${channel}, category: ${category}`
   );
-  if (!channel) return;
   chrome.runtime.sendMessage(
     {
       type: "incrementStat",
