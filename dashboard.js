@@ -322,7 +322,12 @@ function setUpImport() {
     );
     if (!confirmed) return;
 
-    chrome.storage.local.set({ stats }, () => {
+    // Goes through the background write queue so it can't race with saves.
+    chrome.runtime.sendMessage({ type: "replaceStats", stats }, (resp) => {
+      if (!resp?.success) {
+        alert("❌ Failed to import stats: " + (resp?.error || "unknown error"));
+        return;
+      }
       alert("✅ Stats imported successfully!");
       loadDashboard();
     });

@@ -1,3 +1,6 @@
+// Shared helpers (normalizeStats) from utils.js.
+importScripts("utils.js");
+
 // All stat writes go through this queue so two saves never read the same
 // old `stats` and overwrite each other (e.g. several Twitch tabs open).
 let writeQueue = Promise.resolve();
@@ -118,6 +121,28 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     .then(() => sendResponse({ success: true }))
     .catch((e) => {
       console.error("[Twitch Tracker] failed to save stat:", e);
+      sendResponse({ success: false, error: String(e?.message || e) });
+    });
+
+  // keep the message channel open for sendResponse
+  return true;
+});
+
+// Import replaces all stats. It goes through the queue so it can't race with
+// saves, and the data is checked again here before it is written.
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg?.type !== "replaceStats") return;
+
+  const stats = normalizeStats(msg.stats);
+  if (!stats) {
+    sendResponse({ success: false, error: "invalid stats data" });
+    return;
+  }
+
+  enqueueWrite(() => chrome.storage.local.set({ stats }))
+    .then(() => sendResponse({ success: true }))
+    .catch((e) => {
+      console.error("[Twitch Tracker] failed to replace stats:", e);
       sendResponse({ success: false, error: String(e?.message || e) });
     });
 
