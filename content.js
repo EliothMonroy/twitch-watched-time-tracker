@@ -2,17 +2,46 @@ const TICK_INTERVAL_MS = 20000;
 // Hidden tabs can be throttled to ~1 tick/min, so allow some headroom; longer gaps mean sleep or a frozen tab.
 const MAX_ELAPSED_SECONDS = 120;
 
+// First path segments on twitch.tv that are not channel pages.
+// Keep in sync with NON_CHANNEL_PATHS in utils.js (content.js doesn't load utils.js).
+// "videos" (VODs) and "moderator" (Mod View) are handled in getChannelName().
+const NON_CHANNEL_PATHS = new Set([
+  "directory",
+  "settings",
+  "search",
+  "downloads",
+  "subscriptions",
+  "inventory",
+  "drops",
+  "wallet",
+  "friends",
+  "messages",
+  "turbo",
+  "prime",
+  "jobs",
+  "p",
+  "u",
+  "popout",
+  "following",
+  "videos",
+  "moderator",
+]);
+
 let isWatching = false;
 let lastUpdate = Date.now();
 
 function getChannelName() {
-  const path = window.location.pathname.split("/");
-  if (path[1] === "videos" && path[2]) {
+  const [, first = "", second = ""] = window.location.pathname.split("/");
+  const segment = first.toLowerCase();
+  if (segment === "videos" && second) {
     // VOD
     let el = document.querySelector('[data-test-selector="ChannelLink"]');
     return el?.textContent.trim().toLowerCase() || null;
   }
-  return path[1] || null;
+  // Mod View (/moderator/<channel>) is watching that channel.
+  if (segment === "moderator") return second || null;
+  if (NON_CHANNEL_PATHS.has(segment)) return null;
+  return first || null;
 }
 
 function getCategory() {
