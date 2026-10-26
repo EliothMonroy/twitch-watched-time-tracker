@@ -59,7 +59,8 @@ document.addEventListener("DOMContentLoaded", () => {
       a.download = "twitch_watch_stats.json";
       a.click();
 
-      URL.revokeObjectURL(url); // Clean up
+      // Revoking right away can cancel the download in some browsers.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
   });
 
