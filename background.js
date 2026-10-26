@@ -16,6 +16,23 @@ async function incrementStat(channel, category, elapsed) {
   await chrome.storage.local.set({ stats });
 }
 
+// Clear Data goes through the queue too. Otherwise a save that was already
+// waiting could write the old stats back right after the clear.
+// Only `stats` is removed, so settings like dashboardItemLimit are kept.
+chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (msg?.type !== "clearStats") return;
+
+  enqueueWrite(() => chrome.storage.local.remove("stats"))
+    .then(() => sendResponse({ success: true }))
+    .catch((e) => {
+      console.error("[Twitch Tracker] failed to clear stats:", e);
+      sendResponse({ success: false, error: String(e?.message || e) });
+    });
+
+  // keep the message channel open for sendResponse
+  return true;
+});
+
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   if (msg?.type !== "incrementStat") return;
 

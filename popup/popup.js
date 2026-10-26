@@ -38,13 +38,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const confirmed = confirm(
       "Are you sure you want to clear all watch data? This cannot be undone."
     );
-    if (confirmed) {
-      // Only remove watch data; keep settings like the dashboard chart size.
-      chrome.storage.local.remove("stats", () => {
-        alert("✅ All data has been cleared.");
-        location.reload(); // Optional: Refresh to reflect the reset state
-      });
-    }
+    if (!confirmed) return;
+
+    // Goes through the background write queue and only removes `stats`,
+    // so settings like the dashboard chart size are kept.
+    chrome.runtime.sendMessage({ type: "clearStats" }, (resp) => {
+      if (!resp?.success) {
+        alert("❌ Could not clear data: " + (resp?.error || "unknown error"));
+        return;
+      }
+      alert("✅ All data has been cleared.");
+      location.reload();
+    });
   });
 
   document.getElementById("export").addEventListener("click", () => {
