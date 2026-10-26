@@ -39,8 +39,8 @@ test("live stream: video plays and category resolves", async ({ page }) => {
   console.log(`Checked live stream ${login} (${resolved.category})`);
 });
 
-// Path of the latest VOD of `login` as /videos/<id> (the URL content.js reads
-// the channel link on), or null if it has none.
+// Path of the latest VOD of `login` as /videos/<id> (where content.js has to
+// find the channel on the page), or null if it has none.
 async function latestVod(page, login) {
   await page.goto(`${TWITCH}/${login}/videos?filter=archives&sort=time`, {
     waitUntil: "domcontentloaded",
@@ -75,21 +75,14 @@ test("VOD: content.js finds the channel", async ({ page }) => {
   }
   expect(vodPath, `a VOD from one of: ${candidates.join(", ")}`).toBeTruthy();
 
-  // On /videos/<id> content.js takes the channel from the ChannelLink href.
+  // On /videos/<id> content.js finds the channel on the page (see
+  // getVodChannel() in content.js), whichever layout Twitch serves.
   await page.goto(`${TWITCH}${vodPath}`, { waitUntil: "domcontentloaded" });
   await expect
     .poll(async () => (await resolveLikeExtension(page)).channel, {
-      message: `channel resolved by content.js on ${vodPath} (ChannelLink)`,
+      message: `channel resolved by content.js on ${vodPath}`,
       timeout: 30_000,
     })
     .toBe(channel);
-
-  const href = await page
-    .locator('[data-test-selector="ChannelLink"]')
-    .first()
-    .getAttribute("href");
-  expect(new URL(href, TWITCH).pathname.split("/")[1].toLowerCase()).toBe(
-    channel
-  );
   console.log(`Checked VOD ${vodPath} (${channel})`);
 });
