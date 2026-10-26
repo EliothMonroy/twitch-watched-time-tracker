@@ -64,7 +64,7 @@ Run `npm ci` once, then `npm test` for the unit tests (Node's built-in test runn
 
 ### Weekly Twitch check
 
-Tracking depends on Twitch's page markup (the `video` element, the category link, the VOD channel link). If Twitch renames those, the extension silently records "Unknown" or nothing. The **Twitch page check** workflow opens the real twitch.tv in Chromium (Playwright, files in `e2e/`) every Monday, picks a live English stream from the directory, and runs `content.js` on it to check that it still finds the playing video, the channel, and the category. It also opens one of that channel's VODs and checks the channel link.
+Tracking depends on Twitch's page markup (the `video` element, the category link, the VOD channel link). If Twitch renames those, the extension silently records "Unknown" or nothing. The **Twitch page check** workflow opens the real twitch.tv in Chromium (Playwright, files in `e2e/`) every Monday, picks a live English stream from the directory, and runs `content.js` on it to check that it still finds the playing video, the channel, and the category. It also opens one of that channel's VODs and checks the channel link. A second check loads the extension itself, watches a live stream for about a minute, and checks at least 20 seconds were saved for that channel under a real category (not "Unknown").
 
 - A failed scheduled run sends GitHub's usual workflow-failure email.
 - It also runs on PRs that change `content.js`, `background.js`, `manifest.json`, or `e2e/`. It is not a required check, so it never blocks merging.

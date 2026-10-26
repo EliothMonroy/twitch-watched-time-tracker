@@ -82,10 +82,12 @@ export default [
     },
   },
 
-  // Playwright checks: Node, plus browser globals for code that runs in the
-  // page (page.evaluate).
+  // Playwright checks: Node, plus browser and extension globals for code
+  // that runs in the page or the extension's service worker (evaluate).
   {
     files: ["e2e/**/*.mjs"],
-    languageOptions: { globals: globals.browser },
+    languageOptions: {
+      globals: { ...globals.browser, ...globals.webextensions },
+    },
   },
 ];
