@@ -96,10 +96,11 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   document.getElementById("set-initial").addEventListener("click", () => {
-    const channel = prompt("Channel name (e.g., xQc):");
+    // Channel keys are lowercase, like Twitch URLs ("xQc" -> "xqc").
+    const channel = (prompt("Channel name (e.g., xQc):") || "").trim().toLowerCase();
     if (!channel) return;
 
-    const category = prompt("Category (e.g., Just Chatting — optional):");
+    const category = (prompt("Category (e.g., Just Chatting — optional):") || "").trim();
     const timeStr = prompt(
       "Watch time to add: minutes (e.g., 90) or hours:minutes (e.g., 1:30):"
     );
