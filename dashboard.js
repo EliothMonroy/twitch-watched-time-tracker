@@ -283,11 +283,61 @@ function startDashboard(stats, storedLimit) {
   renderCharts();
 }
 
-if (typeof chrome !== "undefined" && chrome.storage?.local) {
+function loadDashboard() {
   chrome.storage.local.get(["stats", STORAGE_KEY], (result) => {
     startDashboard(result.stats || {}, result[STORAGE_KEY]);
   });
+}
+
+// Import lives here rather than in the popup: on Windows/Linux the popup
+// closes when the file picker opens, so it never gets to read the file.
+function setUpImport() {
+  const importBtn = document.getElementById("import-btn");
+  const fileInput = document.getElementById("import-file");
+
+  importBtn.addEventListener("click", () => fileInput.click());
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    fileInput.value = ""; // allow picking the same file again
+    if (!file) return;
+
+    try {
+      const data = JSON.parse(await file.text());
+
+      // Validate expected format: streamer -> { category: seconds }
+      const isValid = Object.values(data).every(
+        (entry) =>
+          typeof entry === "object" &&
+          entry !== null &&
+          Object.values(entry).every((val) => typeof val === "number")
+      );
+
+      if (!isValid) {
+        alert("❌ Invalid file format.");
+        return;
+      }
+
+      const confirmed = confirm(
+        "Are you sure you want to overwrite your current stats with this file?"
+      );
+      if (!confirmed) return;
+
+      chrome.storage.local.set({ stats: data }, () => {
+        alert("✅ Stats imported successfully!");
+        loadDashboard();
+      });
+    } catch (err) {
+      alert("❌ Failed to import stats: " + err.message);
+    }
+  });
+}
+
+if (typeof chrome !== "undefined" && chrome.storage?.local) {
+  setUpImport();
+  loadDashboard();
 } else {
+  document.getElementById("import-btn").hidden = true;
   const previewStats = {
     xqc: { "Just Chatting": 180000, Minecraft: 54000 },
     pokimane: { "Just Chatting": 92000, Valorant: 41000 },
