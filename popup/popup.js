@@ -85,18 +85,19 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const seconds = minutes * 60;
-    chrome.storage.local.get("stats", (data) => {
-      const stats = data.stats || {};
-      const catKey = category || "Unknown";
-
-      stats[channel] = stats[channel] || {};
-      stats[channel][catKey] = (stats[channel][catKey] || 0) + seconds;
-
-      chrome.storage.local.set({ stats }, () => {
+    const catKey = category || "Unknown";
+    // Go through the background so this can't race with tracked saves.
+    chrome.runtime.sendMessage(
+      { type: "incrementStat", channel, category: catKey, elapsed: seconds },
+      (resp) => {
+        if (!resp?.success) {
+          alert("❌ Could not add watch time. Check the time you entered.");
+          return;
+        }
         alert(`Added ${minutes} minutes to ${channel} (${catKey})`);
         location.reload(); // Refresh the popup
-      });
-    });
+      }
+    );
   });
 });
 
