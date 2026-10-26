@@ -62,6 +62,15 @@ Click the **"Export JSON"** button in the popup to download your watch stats.
 
 Run `npm ci` once, then `npm test` for the unit tests (Node's built-in test runner, files in `tests/`) and `npm run lint` for ESLint.
 
+### Weekly Twitch check
+
+Tracking depends on Twitch's page markup (the `video` element, the category link, the VOD channel link). If Twitch renames those, the extension silently records "Unknown" or nothing. The **Twitch page check** workflow opens the real twitch.tv in Chromium (Playwright, files in `e2e/`) every Monday, picks a live English stream from the directory, and runs `content.js` on it to check that it still finds the playing video, the channel, and the category. It also opens one of that channel's VODs and checks the channel link.
+
+- A failed scheduled run sends GitHub's usual workflow-failure email.
+- It also runs on PRs that change `content.js`, `background.js`, `manifest.json`, or `e2e/`. It is not a required check, so it never blocks merging.
+- Run it by hand: **Actions** tab → **Twitch page check** → **Run workflow**.
+- Run it locally: `npx playwright install chromium`, then `npm run test:twitch`.
+
 ## 🙋‍♂️ Questions or Suggestions?
 
 Feel free to open an issue or contact me.
