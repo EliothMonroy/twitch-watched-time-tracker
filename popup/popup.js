@@ -1,5 +1,6 @@
 function sortChannels(stats) {
   return Object.entries(stats)
+    .filter(([channel]) => !isNonChannelPath(channel))
     .map(([channel, categories]) => {
       const total = Object.values(categories).reduce((a, b) => a + b, 0);
       return { channel, categories, total };
@@ -19,17 +20,17 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    container.innerHTML = "";
+    container.textContent = "";
 
     sorted.slice(0, 5).forEach(({ channel, categories, total }, index) => {
       const channelDiv = document.createElement("div");
       channelDiv.className = "channel";
 
-      const totalTime = formatTimeSmart(total);
-      channelDiv.innerHTML = `<div class="total">${
-        index + 1
-      }. ${channel} - ${totalTime}</div>`;
+      const totalDiv = document.createElement("div");
+      totalDiv.className = "total";
+      totalDiv.textContent = `${index + 1}. ${channel} - ${formatTimeSmart(total)}`;
 
+      channelDiv.appendChild(totalDiv);
       container.appendChild(channelDiv);
     });
   });
@@ -39,7 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
       "Are you sure you want to clear all watch data? This cannot be undone."
     );
     if (confirmed) {
-      chrome.storage.local.clear(() => {
+      // Only remove watch data; keep settings like the dashboard chart size.
+      chrome.storage.local.remove("stats", () => {
         alert("✅ All data has been cleared.");
         location.reload(); // Optional: Refresh to reflect the reset state
       });
@@ -59,7 +61,8 @@ document.addEventListener("DOMContentLoaded", () => {
       a.download = "twitch_watch_stats.json";
       a.click();
 
-      URL.revokeObjectURL(url); // Clean up
+      // Revoking right away can cancel the download in some browsers.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
   });
 

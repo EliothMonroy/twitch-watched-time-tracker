@@ -250,7 +250,7 @@ function aggregateStats(stats) {
   const categories = {};
 
   for (const [channel, cats] of Object.entries(stats)) {
-    if (channel === "videos") continue;
+    if (isNonChannelPath(channel)) continue;
     let channelTotal = 0;
     for (const [category, seconds] of Object.entries(cats)) {
       channelTotal += seconds;
