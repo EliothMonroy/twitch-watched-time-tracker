@@ -102,6 +102,24 @@
         font-size: 0.95rem;
       }
 
+      .header-btn {
+        appearance: none;
+        border: 1px solid var(--border);
+        background: var(--bg-elevated);
+        color: var(--text);
+        border-radius: 999px;
+        padding: 8px 16px;
+        font: inherit;
+        font-size: 0.9rem;
+        cursor: pointer;
+        transition: background 0.15s, border-color 0.15s;
+      }
+
+      .header-btn:hover {
+        background: var(--bg-hover);
+        border-color: var(--purple);
+      }
+
       .stats {
         display: grid;
         grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -291,6 +309,8 @@
             <p class="subtitle">Time spent across Twitch channels and categories</p>
           </div>
         </div>
+        <input type="file" id="import-file" accept=".json,application/json" hidden />
+        <button type="button" class="header-btn" id="import-btn">Import JSON</button>
       </header>
 
       <section id="empty-state" class="empty hidden" hidden>
