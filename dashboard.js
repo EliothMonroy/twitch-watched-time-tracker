@@ -250,7 +250,7 @@ function aggregateStats(stats) {
   const categories = {};
 
   for (const [channel, cats] of Object.entries(stats)) {
-    if (channel === "videos") continue;
+    if (isNonChannelPath(channel)) continue;
     let channelTotal = 0;
     for (const [category, seconds] of Object.entries(cats)) {
       channelTotal += seconds;
@@ -283,11 +283,62 @@ function startDashboard(stats, storedLimit) {
   renderCharts();
 }
 
-if (typeof chrome !== "undefined" && chrome.storage?.local) {
+function loadDashboard() {
   chrome.storage.local.get(["stats", STORAGE_KEY], (result) => {
     startDashboard(result.stats || {}, result[STORAGE_KEY]);
   });
+}
+
+// Import lives here rather than in the popup: on Windows/Linux the popup
+// closes when the file picker opens, so it never gets to read the file.
+function setUpImport() {
+  const importBtn = document.getElementById("import-btn");
+  const fileInput = document.getElementById("import-file");
+
+  importBtn.addEventListener("click", () => fileInput.click());
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files[0];
+    fileInput.value = ""; // allow picking the same file again
+    if (!file) return;
+
+    let stats;
+    try {
+      stats = normalizeStats(JSON.parse(await file.text()));
+    } catch (err) {
+      alert("❌ Failed to read file: " + err.message);
+      return;
+    }
+    if (!stats) {
+      alert(
+        "❌ Invalid file format. Expected { channel: { category: seconds } } " +
+          "with non-negative numbers."
+      );
+      return;
+    }
+
+    const confirmed = confirm(
+      "Are you sure you want to overwrite your current stats with this file?"
+    );
+    if (!confirmed) return;
+
+    // Goes through the background write queue so it can't race with saves.
+    chrome.runtime.sendMessage({ type: "replaceStats", stats }, (resp) => {
+      if (!resp?.success) {
+        alert("❌ Failed to import stats: " + (resp?.error || "unknown error"));
+        return;
+      }
+      alert("✅ Stats imported successfully!");
+      loadDashboard();
+    });
+  });
+}
+
+if (typeof chrome !== "undefined" && chrome.storage?.local) {
+  setUpImport();
+  loadDashboard();
 } else {
+  document.getElementById("import-btn").hidden = true;
   const previewStats = {
     xqc: { "Just Chatting": 180000, Minecraft: 54000 },
     pokimane: { "Just Chatting": 92000, Valorant: 41000 },

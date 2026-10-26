@@ -1,10 +1,15 @@
 function sortChannels(stats) {
   return Object.entries(stats)
+    .filter(([channel]) => !isNonChannelPath(channel))
     .map(([channel, categories]) => {
       const total = Object.values(categories).reduce((a, b) => a + b, 0);
       return { channel, categories, total };
     })
     .sort((a, b) => b.total - a.total);
+}
+
+function openDashboard() {
+  chrome.tabs.create({ url: chrome.runtime.getURL("dashboard.html") });
 }
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -19,17 +24,17 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    container.innerHTML = "";
+    container.textContent = "";
 
-    sorted.slice(0, 5).forEach(({ channel, categories, total }, index) => {
+    sorted.slice(0, 5).forEach(({ channel, total }, index) => {
       const channelDiv = document.createElement("div");
       channelDiv.className = "channel";
 
-      const totalTime = formatTimeSmart(total);
-      channelDiv.innerHTML = `<div class="total">${
-        index + 1
-      }. ${channel} - ${totalTime}</div>`;
+      const totalDiv = document.createElement("div");
+      totalDiv.className = "total";
+      totalDiv.textContent = `${index + 1}. ${channel} - ${formatTimeSmart(total)}`;
 
+      channelDiv.appendChild(totalDiv);
       container.appendChild(channelDiv);
     });
   });
@@ -38,12 +43,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const confirmed = confirm(
       "Are you sure you want to clear all watch data? This cannot be undone."
     );
-    if (confirmed) {
-      chrome.storage.local.clear(() => {
-        alert("✅ All data has been cleared.");
-        location.reload(); // Optional: Refresh to reflect the reset state
-      });
-    }
+    if (!confirmed) return;
+
+    // Goes through the background write queue and only removes `stats`,
+    // so settings like the dashboard chart size are kept.
+    chrome.runtime.sendMessage({ type: "clearStats" }, (resp) => {
+      if (!resp?.success) {
+        alert("❌ Could not clear data: " + (resp?.error || "unknown error"));
+        return;
+      }
+      alert("✅ All data has been cleared.");
+      location.reload();
+    });
   });
 
   document.getElementById("export").addEventListener("click", () => {
@@ -59,39 +70,47 @@ document.addEventListener("DOMContentLoaded", () => {
       a.download = "twitch_watch_stats.json";
       a.click();
 
-      URL.revokeObjectURL(url); // Clean up
+      // Revoking right away can cancel the download in some browsers.
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
   });
 
-  document.getElementById("open-dashboard").addEventListener("click", () => {
-    chrome.tabs.create({ url: chrome.runtime.getURL("dashboard.html") });
-  });
+  document.getElementById("open-dashboard").addEventListener("click", openDashboard);
+
+  // A file picker opened from the popup closes the popup on Windows/Linux, so
+  // the file never gets read. Import lives on the dashboard page instead.
+  document.getElementById("importBtn").addEventListener("click", openDashboard);
 
   document.getElementById("set-initial").addEventListener("click", () => {
-    const channel = prompt("Channel name (e.g., xQc):");
+    const channel = normalizeChannel(prompt("Channel name (e.g., xQc):"));
     if (!channel) return;
 
-    const category = prompt("Category (e.g., Just Chatting — optional):");
-    const timeStr = prompt("Initial watch time (in minutes or HH:MM format):");
-    if (!timeStr) return;
+    const category = (prompt("Category (e.g., Just Chatting — optional):") || "").trim();
+    const timeStr = prompt(
+      "Watch time to add: minutes (e.g., 90) or hours:minutes (e.g., 1:30):"
+    );
+    if (timeStr === null) return;
 
-    // Parse time input
-    let minutes = 0;
-    if (/^\d+:\d{2}$/.test(timeStr)) {
-      const [h, m] = timeStr.split(":").map(Number);
-      minutes = h * 60 + m;
-    } else {
-      minutes = parseInt(timeStr);
+    const minutes = parseWatchTimeMinutes(timeStr);
+    if (minutes === null) {
+      alert(
+        "❌ Invalid time. Enter whole minutes (e.g., 90) or hours:minutes (e.g., 1:30)."
+      );
+      return;
     }
 
-    const seconds = minutes * 60;
     const catKey = category || "Unknown";
     // Go through the background so this can't race with tracked saves.
     chrome.runtime.sendMessage(
-      { type: "incrementStat", channel, category: catKey, elapsed: seconds },
+      {
+        type: "incrementStat",
+        channel,
+        category: catKey,
+        elapsed: minutes * 60,
+      },
       (resp) => {
         if (!resp?.success) {
-          alert("❌ Could not add watch time. Check the time you entered.");
+          alert("❌ Could not add watch time: " + (resp?.error || "unknown error"));
           return;
         }
         alert(`Added ${minutes} minutes to ${channel} (${catKey})`);
@@ -100,45 +119,3 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   });
 });
-
-document.getElementById("importBtn").addEventListener("click", () => {
-  document.getElementById("importFileInput").click();
-});
-
-document
-  .getElementById("importFileInput")
-  .addEventListener("change", async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    try {
-      const text = await file.text();
-      const data = JSON.parse(text);
-
-      // ✅ Validate expected format: streamer -> { category: seconds }
-      const isValid = Object.values(data).every(
-        (entry) =>
-          typeof entry === "object" &&
-          entry !== null &&
-          Object.values(entry).every((val) => typeof val === "number")
-      );
-
-      if (!isValid) {
-        alert("❌ Invalid file format.");
-        return;
-      }
-
-      const confirmed = confirm(
-        "Are you sure you want to overwrite your current stats with this file?"
-      );
-      if (!confirmed) return;
-
-      // ✅ Store as-is, since it's already in the correct format
-      chrome.storage.local.set({ stats: data }, () => {
-        alert("✅ Stats imported successfully!");
-        location.reload();
-      });
-    } catch (err) {
-      alert("❌ Failed to import stats: " + err.message);
-    }
-  });
