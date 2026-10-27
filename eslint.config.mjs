@@ -81,4 +81,11 @@ export default [
       globals: globals.node,
     },
   },
+
+  // Playwright checks: Node, plus browser globals for code that runs in the
+  // page (page.evaluate).
+  {
+    files: ["e2e/**/*.mjs"],
+    languageOptions: { globals: globals.browser },
+  },
 ];
