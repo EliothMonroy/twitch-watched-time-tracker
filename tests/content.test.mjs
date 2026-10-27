@@ -9,6 +9,8 @@ const SECOND = 1000;
 const MINUTE = 60 * SECOND;
 
 const CHANNEL_LINK = '[data-test-selector="ChannelLink"]';
+// The channel name heading in the stream info under the player.
+const CHANNEL_HEADING_LINK = "#live-channel-stream-information a[href]:has(h1)";
 const GAME_LINK = '[data-a-target="stream-game-link"]';
 const GAME_LINK_FALLBACK = '[data-test-selector="GameLink"]';
 
@@ -59,9 +61,12 @@ function watching(options) {
 }
 
 describe("getChannelName", () => {
-  const channelOn = (pathname, links = []) => {
+  const channelOn = (pathname, links = [], headingLinks = []) => {
     const t = setup({ pathname, playing: null });
     if (links.length) t.page.setElements(CHANNEL_LINK, links.map(createElement));
+    if (headingLinks.length) {
+      t.page.setElements(CHANNEL_HEADING_LINK, headingLinks.map(createElement));
+    }
     return t.env.get("getChannelName")();
   };
 
@@ -72,6 +77,11 @@ describe("getChannelName", () => {
   test("subpages of a channel use the first segment", () => {
     assert.equal(channelOn("/xqc/videos"), "xqc");
     assert.equal(channelOn("/xqc/clip/SomeClip"), "xqc");
+  });
+
+  test("VOD at /<channel>/video/<id> uses the first segment", () => {
+    assert.equal(channelOn("/xqc/video/123456"), "xqc");
+    assert.equal(channelOn("/XQC/video/123456"), "xqc");
   });
 
   test("lowercases the channel", () => {
@@ -145,6 +155,26 @@ describe("getChannelName", () => {
   test("VOD with a non-Latin display name uses the login from the href", () => {
     const link = { text: "日本の配信者", attributes: { href: "/japanese_streamer" } };
     assert.equal(channelOn("/videos/123456", [link]), "japanese_streamer");
+  });
+
+  test("VOD uses the channel name heading's href", () => {
+    const heading = { text: "Jynxzi", attributes: { href: "/jynxzi" } };
+    assert.equal(channelOn("/videos/123456", [], [heading]), "jynxzi");
+  });
+
+  test("VOD with a non-Latin display name in the heading uses the login", () => {
+    const heading = { text: "日本の配信者", attributes: { href: "/japanese_streamer" } };
+    assert.equal(channelOn("/videos/123456", [], [heading]), "japanese_streamer");
+  });
+
+  test("VOD heading without an href falls back to its text", () => {
+    assert.equal(channelOn("/videos/123456", [], [{ text: " Jynxzi " }]), "jynxzi");
+  });
+
+  test("VOD prefers the channel name heading over a ChannelLink", () => {
+    const heading = { text: "xQc", attributes: { href: "/xqc" } };
+    const link = { text: "Other", attributes: { href: "/other" } };
+    assert.equal(channelOn("/videos/123456", [link], [heading]), "xqc");
   });
 
   test("VOD without a channel link has no channel", () => {

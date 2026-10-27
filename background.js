@@ -66,7 +66,7 @@ async function mergeChannelKeys() {
     if (target === key || target === "" || target === "__proto__") continue;
 
     const from = stats[key];
-    const into = stats[target] ?? {};
+    const into = Object.hasOwn(stats, target) ? stats[target] : {};
     if (!isPlainObject(from) || !isPlainObject(into)) continue;
 
     const merged = mergeCategories(into, from);
@@ -91,8 +91,12 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
 
 async function incrementStat(channel, category, elapsed) {
   const { stats = {} } = await chrome.storage.local.get("stats");
-  stats[channel] = stats[channel] || {};
-  stats[channel][category] = (stats[channel][category] || 0) + elapsed;
+  // Use own keys only: a channel named "constructor" would otherwise read
+  // Object.prototype.constructor instead of a saved entry.
+  const categories = Object.hasOwn(stats, channel) ? stats[channel] : {};
+  const current = Object.hasOwn(categories, category) ? categories[category] : 0;
+  categories[category] = current + elapsed;
+  stats[channel] = categories;
   await chrome.storage.local.set({ stats });
 }
 
