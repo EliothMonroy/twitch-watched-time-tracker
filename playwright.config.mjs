@@ -10,7 +10,8 @@ export default defineConfig({
   workers: 1,
   reporter: process.env.CI ? [["list"], ["html", { open: "never" }]] : "list",
   use: {
-    // Full Chromium (Chrome for Testing), which plays Twitch's H.264 video.
+    // Full Chromium (Chrome for Testing): plays Twitch's H.264 video and can
+    // load unpacked extensions, also when headless.
     channel: "chromium",
     locale: "en-US",
     viewport: { width: 1280, height: 800 },
