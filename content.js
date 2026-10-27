@@ -6,6 +6,7 @@ const MAX_ELAPSED_SECONDS = 120;
 // First path segments on twitch.tv that are not channel pages.
 // Keep in sync with NON_CHANNEL_PATHS in utils.js (content.js doesn't load utils.js).
 // "videos" (VODs) and "moderator" (Mod View) are handled in getChannelName().
+// VODs at /<channel>/video/<id> use the first segment as usual.
 const NON_CHANNEL_PATHS = new Set([
   "directory",
   "settings",
@@ -36,10 +37,24 @@ function normalizeChannel(name) {
   return name?.trim().toLowerCase() || null;
 }
 
+// Links to the VOD's channel on /videos/<id>, in order of preference:
+// - the channel name heading under the player (the same stream info section
+//   as on live channel pages);
+// - a ChannelLink, which Twitch now only puts on the channel's video cards
+//   below the player; they load late or not at all.
+const VOD_CHANNEL_LINKS = [
+  "#live-channel-stream-information a[href]:has(h1)",
+  '[data-test-selector="ChannelLink"]',
+];
+
 // On a VOD page, use the channel link's href (the login) rather than its text,
 // which is the display name and can differ (e.g. non-Latin display names).
 function getVodChannel() {
-  const link = document.querySelector('[data-test-selector="ChannelLink"]');
+  let link = null;
+  for (const selector of VOD_CHANNEL_LINKS) {
+    link = document.querySelector(selector);
+    if (link) break;
+  }
   if (!link) return null;
   const href = link.getAttribute("href");
   if (href) {
