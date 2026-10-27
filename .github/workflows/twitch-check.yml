@@ -32,7 +32,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # Keep Playwright's Chromium between runs (keyed by Playwright version)
+      # so most runs skip the download and the Linux package install, which
+      # is the slow and occasionally stuck part.
+      - name: Get Playwright version
+        id: playwright
+        run: echo "version=$(node -p 'require("./node_modules/@playwright/test/package.json").version')" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Chromium
+        id: browser-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      # The runner image already has the system libraries Chromium needs, so a
+      # cache hit needs no install at all.
       - name: Install Chromium
+        if: steps.browser-cache.outputs.cache-hit != 'true'
+        timeout-minutes: 5
         run: npx playwright install --with-deps --no-shell chromium
 
       - name: Check twitch.tv
